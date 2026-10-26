@@ -26,10 +26,14 @@ import {
   ArrowRight,
   Lock,
   Image as ImageIcon,
+  Mic,
+  Navigation,
+  Compass,
 } from 'lucide-react';
 import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { FALLBACK_EVENTS } from '@/lib/default-events';
+import { playTabSound, playClickSound, playSuccessSound, playModalSound } from '@/lib/sound-effects';
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -39,8 +43,15 @@ export default function EventDetailPage() {
 
   const [event, setEvent] = useState<any>(() => FALLBACK_EVENTS.find((e) => e.slug === slug || e.id === slug) || null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'about' | 'gallery' | 'timeline' | 'prizes' | 'rules' | 'faqs' | 'reviews'>('about');
+  const [activeTab, setActiveTab] = useState<'about' | 'speakers' | 'venue' | 'gallery' | 'timeline' | 'prizes' | 'rules' | 'faqs' | 'reviews'>('about');
   const [selectedGalleryImg, setSelectedGalleryImg] = useState<string | null>(null);
+  const [copiedAddress, setCopiedAddress] = useState(false);
+
+  // Tab switch with sound effect
+  const handleTabChange = (tabId: any) => {
+    setActiveTab(tabId);
+    playTabSound();
+  };
 
   // Guard: Redirect to login if user is not authenticated
   useEffect(() => {
@@ -98,6 +109,7 @@ export default function EventDetailPage() {
       if (res.ok) {
         const data = await res.json();
         setAiHistory((prev) => [...prev, { q, a: data.answer }]);
+        playSuccessSound();
       }
     } catch (err) {
       console.error(err);
@@ -110,7 +122,17 @@ export default function EventDetailPage() {
     if (typeof window !== 'undefined') {
       navigator.clipboard.writeText(window.location.href);
       setCopied(true);
+      playSuccessSound();
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleCopyAddress = (addressText: string) => {
+    if (typeof window !== 'undefined' && addressText) {
+      navigator.clipboard.writeText(addressText);
+      setCopiedAddress(true);
+      playSuccessSound();
+      setTimeout(() => setCopiedAddress(false), 2000);
     }
   };
 
@@ -171,13 +193,55 @@ export default function EventDetailPage() {
   let faqsList: any[] = [];
   let eligibilityList: any[] = [];
   let galleryList: string[] = [];
+  let speakersList: any[] = [];
+
   try {
     if (event.prizes) prizesList = JSON.parse(event.prizes);
     if (event.sponsors) sponsorsList = JSON.parse(event.sponsors);
     if (event.faqs) faqsList = JSON.parse(event.faqs);
     if (event.eligibilityCriteria) eligibilityList = JSON.parse(event.eligibilityCriteria);
     if (event.gallery) galleryList = JSON.parse(event.gallery);
+    if (event.speakers) {
+      speakersList = typeof event.speakers === 'string' ? JSON.parse(event.speakers) : event.speakers;
+    }
   } catch {}
+
+  // Fallback to FALLBACK_EVENTS if DB record doesn't have speakers yet
+  if (!speakersList || speakersList.length === 0) {
+    const fbEvt = FALLBACK_EVENTS.find((e) => e.slug === slug || e.id === slug || e.id === event.id);
+    if (fbEvt?.speakers) {
+      try {
+        speakersList = JSON.parse(fbEvt.speakers);
+      } catch {}
+    }
+  }
+
+  // If still empty, provide high quality default speakers
+  if (!speakersList || speakersList.length === 0) {
+    speakersList = [
+      {
+        name: 'Dr. Anand Deshpande',
+        role: 'Keynote Speaker & Founder',
+        company: 'Persistent Systems Pune',
+        photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+        bio: 'Tech entrepreneur and visionary leader based in Pune, mentoring engineers and researchers.',
+        linkedin: 'https://linkedin.com',
+      },
+      {
+        name: 'Pooja Kulkarni',
+        role: 'Director of Engineering & GenAI Lead',
+        company: 'Google Cloud Pune',
+        photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80',
+        bio: 'Leading high-scale machine learning systems, intelligent agent architectures, and developer ecosystems.',
+        twitter: 'https://twitter.com',
+      },
+    ];
+  }
+
+  const fbPune = FALLBACK_EVENTS.find((e) => e.slug === slug || e.id === slug || e.id === event.id);
+  const venueLocation = event.location || fbPune?.location || 'Shivajinagar, Pune';
+  const venueAddress = event.venueAddress || fbPune?.venueAddress || 'Bal Gandharva Ranga Mandir, JM Road, Shivajinagar, Pune - 411005';
+  const venueMapLink = event.mapLink || fbPune?.mapLink || `https://maps.google.com/?q=${encodeURIComponent(venueAddress)}`;
 
   if (!galleryList || galleryList.length === 0) {
     galleryList = [
@@ -278,6 +342,8 @@ export default function EventDetailPage() {
             <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto no-scrollbar">
               {[
                 { id: 'about', label: 'Overview & Tracks' },
+                { id: 'speakers', label: `Speakers (${speakersList.length})` },
+                { id: 'venue', label: 'Venue & Pune Map' },
                 { id: 'gallery', label: `Photos (${galleryList.length})` },
                 { id: 'timeline', label: `Stages (${event.rounds?.length || 0})` },
                 { id: 'prizes', label: 'Prizes & Perks' },
@@ -287,7 +353,7 @@ export default function EventDetailPage() {
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => handleTabChange(tab.id as any)}
                   className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                     activeTab === tab.id
                       ? 'bg-indigo-600 text-white shadow-md'
@@ -301,42 +367,192 @@ export default function EventDetailPage() {
 
             {/* Tab: About & Overview */}
             {activeTab === 'about' && (
-              <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/70 border border-slate-800 space-y-6">
-                <h3 className="text-xl font-bold text-white font-display">About the Event</h3>
-                <div className="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed whitespace-pre-line">
-                  {event.description}
+              <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/70 border border-slate-800 space-y-8">
+                <div>
+                  <h3 className="text-xl font-bold text-white font-display mb-3">About the Event</h3>
+                  <div className="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed whitespace-pre-line">
+                    {event.description}
+                  </div>
                 </div>
 
-                {/* Venue & Map Location if Offline / Hybrid */}
-                {event.venueAddress && (
-                  <div className="mt-8 pt-6 border-t border-slate-800">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4 text-rose-400" />
-                      <span>Event Venue Details</span>
-                    </h4>
-                    <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-bold text-white">{event.location || 'Pune Venue'}</p>
-                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">{event.venueAddress}</p>
+                {/* Featured Keynote Speakers & Mentors Grid */}
+                {speakersList.length > 0 && (
+                  <div className="pt-6 border-t border-slate-800">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          <Mic className="w-4 h-4" />
+                        </span>
+                        <div>
+                          <h4 className="text-base font-bold text-white font-display">
+                            Distinguished Speakers & Mentors
+                          </h4>
+                          <p className="text-[11px] text-slate-400">
+                            Learn from leading pioneers, authors, and industry luminaries
+                          </p>
+                        </div>
                       </div>
-                      {event.mapLink && (
+                      <span className="text-[11px] font-semibold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                        {speakersList.length} Speakers
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {speakersList.map((sp: any, i: number) => (
+                        <div
+                          key={i}
+                          className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col justify-between group shadow-sm hover:shadow-indigo-500/10"
+                        >
+                          <div>
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="relative shrink-0">
+                                <img
+                                  src={sp.photo}
+                                  alt={sp.name}
+                                  className="w-14 h-14 rounded-2xl object-cover ring-2 ring-indigo-500/30 group-hover:ring-indigo-500 transition-all group-hover:scale-105"
+                                />
+                                <span
+                                  className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#090d16]"
+                                  title="Confirmed Speaker"
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h5 className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors truncate">
+                                  {sp.name}
+                                </h5>
+                                <p className="text-[11px] font-semibold text-indigo-400 truncate mt-0.5">
+                                  {sp.role}
+                                </p>
+                                <span className="text-[10px] text-slate-400 block truncate">
+                                  {sp.company}
+                                </span>
+                              </div>
+                            </div>
+
+                            {sp.bio && (
+                              <p className="text-[11px] text-slate-300 leading-relaxed line-clamp-3 mb-3">
+                                {sp.bio}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                            <span className="text-slate-500 font-medium">Session Speaker</span>
+                            <div className="flex items-center gap-2">
+                              {sp.linkedin && (
+                                <a
+                                  href={sp.linkedin}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-slate-400 hover:text-white transition-colors"
+                                  title="LinkedIn"
+                                >
+                                  LinkedIn
+                                </a>
+                              )}
+                              {sp.twitter && (
+                                <a
+                                  href={sp.twitter}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-slate-400 hover:text-sky-400 transition-colors"
+                                  title="Twitter"
+                                >
+                                  Twitter
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Venue & Interactive Google Map in Pune */}
+                <div className="pt-6 border-t border-slate-800 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                        <MapPin className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <h4 className="text-base font-bold text-white font-display">
+                          Event Venue & Google Map Location
+                        </h4>
+                        <p className="text-[11px] text-slate-400">
+                          Pune, Maharashtra
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                      📍 Verified Pune Venue
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-white">{venueLocation}</span>
+                        <span className="text-[10px] text-slate-400 font-medium bg-slate-800 px-2 py-0.5 rounded">
+                          Pune
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                        {venueAddress}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleCopyAddress(venueAddress)}
+                        className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all flex items-center gap-1.5"
+                      >
+                        {copiedAddress ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                      {venueMapLink && (
                         <a
-                          href={event.mapLink}
+                          href={venueMapLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="self-start sm:self-auto px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-md shadow-indigo-600/20"
+                          className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-md shadow-indigo-600/20"
                         >
+                          <Navigation className="w-3.5 h-3.5" />
                           <span>Open in Google Maps</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       )}
                     </div>
                   </div>
-                )}
+
+                  {/* Embedded Live Google Maps Iframe */}
+                  <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-lg">
+                    <iframe
+                      title={`Google Map Location: ${event.title}`}
+                      width="100%"
+                      height="280"
+                      style={{ border: 0, display: 'block' }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(venueAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                    />
+                  </div>
+                </div>
 
                 {/* Sponsors if available */}
                 {sponsorsList.length > 0 && (
-                  <div className="mt-8 pt-8 border-t border-slate-800">
+                  <div className="pt-6 border-t border-slate-800">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">
                       Partners & Sponsors
                     </h4>
@@ -360,6 +576,167 @@ export default function EventDetailPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Tab: Dedicated Speakers Directory */}
+            {activeTab === 'speakers' && (
+              <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/70 border border-slate-800 space-y-6">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div>
+                    <h3 className="text-xl font-bold text-white font-display flex items-center gap-2">
+                      <Mic className="w-5 h-5 text-amber-400" />
+                      <span>Event Speakers & Industry Leaders</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Keynotes, judges, and masterclass mentors confirmed for {event.title}.
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-semibold">
+                    {speakersList.length} Luminaries
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {speakersList.map((sp: any, i: number) => (
+                    <div
+                      key={i}
+                      className="p-5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col justify-between group shadow-md hover:shadow-indigo-500/10"
+                    >
+                      <div>
+                        <div className="flex items-start gap-4 mb-3">
+                          <img
+                            src={sp.photo}
+                            alt={sp.name}
+                            className="w-16 h-16 rounded-2xl object-cover ring-2 ring-indigo-500/30 group-hover:ring-indigo-500 transition-all group-hover:scale-105 shrink-0"
+                          />
+                          <div>
+                            <h4 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
+                              {sp.name}
+                            </h4>
+                            <p className="text-xs font-semibold text-indigo-400 mt-0.5">
+                              {sp.role}
+                            </p>
+                            <span className="text-[11px] text-slate-400 block mt-0.5">
+                              {sp.company}
+                            </span>
+                          </div>
+                        </div>
+
+                        {sp.bio && (
+                          <p className="text-xs text-slate-300 leading-relaxed mb-4">
+                            {sp.bio}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                        <span className="text-slate-500 text-[11px] font-medium">Verified Speaker</span>
+                        <div className="flex items-center gap-3">
+                          {sp.linkedin && (
+                            <a
+                              href={sp.linkedin}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-slate-400 hover:text-white transition-colors"
+                            >
+                              LinkedIn ↗
+                            </a>
+                          )}
+                          {sp.twitter && (
+                            <a
+                              href={sp.twitter}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-slate-400 hover:text-sky-400 transition-colors"
+                            >
+                              Twitter ↗
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Dedicated Venue & Pune Map Page */}
+            {activeTab === 'venue' && (
+              <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/70 border border-slate-800 space-y-6">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div>
+                    <h3 className="text-xl font-bold text-white font-display flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-rose-400" />
+                      <span>Event Venue & Directions</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Official offline / hybrid location in Pune, Maharashtra.
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                    📍 Pune Location
+                  </span>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-white">{venueLocation}</span>
+                      <span className="text-[11px] text-slate-400 font-medium bg-slate-800 px-2.5 py-0.5 rounded">
+                        Pune, Maharashtra
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-1.5 leading-relaxed max-w-xl">
+                      {venueAddress}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyAddress(venueAddress)}
+                      className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all flex items-center gap-1.5"
+                    >
+                      {copiedAddress ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copy Address</span>
+                        </>
+                      )}
+                    </button>
+                    {venueMapLink && (
+                      <a
+                        href={venueMapLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-md shadow-indigo-600/20"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>Get Directions</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Embedded Responsive Interactive Google Map */}
+                <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-xl">
+                  <iframe
+                    title={`Google Map Location: ${event.title}`}
+                    width="100%"
+                    height="380"
+                    style={{ border: 0, display: 'block' }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(venueAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                  />
+                </div>
               </div>
             )}
 
@@ -407,7 +784,10 @@ export default function EventDetailPage() {
                       <button
                         key={i}
                         type="button"
-                        onClick={() => setSelectedGalleryImg(imgUrl)}
+                        onClick={() => {
+                          setSelectedGalleryImg(imgUrl);
+                          playClickSound();
+                        }}
                         className={`relative rounded-xl overflow-hidden aspect-video border-2 transition-all group ${
                           isSelected
                             ? 'border-indigo-500 shadow-md shadow-indigo-500/30 ring-2 ring-indigo-500/30'

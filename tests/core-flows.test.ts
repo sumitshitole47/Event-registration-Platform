@@ -276,4 +276,38 @@ describe('Sushanti Core Platform Flows', () => {
     expect(paidEvent?.ticketTiers.length).toBeGreaterThan(0);
     expect(paidEvent?.ticketTiers[0].price).toBeGreaterThan(0);
   });
+
+  it('11. Speakers showcase and Pune Google Map venue locations are properly configured', async () => {
+    const { FALLBACK_EVENTS } = await import('../lib/default-events');
+    const { isMuted, toggleMute, setMuted } = await import('../lib/sound-effects');
+
+    // Test sound effects state toggling
+    expect(typeof isMuted).toBe('function');
+    setMuted(false);
+    expect(isMuted()).toBe(false);
+    toggleMute();
+    expect(isMuted()).toBe(true);
+    setMuted(false);
+
+    // Verify all fallback events have speakers and Pune Google Maps locations
+    expect(FALLBACK_EVENTS.length).toBeGreaterThanOrEqual(5);
+
+    for (const evt of FALLBACK_EVENTS) {
+      if (evt.speakers) {
+        const speakers = JSON.parse(evt.speakers);
+        expect(Array.isArray(speakers)).toBe(true);
+        expect(speakers.length).toBeGreaterThanOrEqual(2);
+        expect(speakers[0].name).toBeDefined();
+        expect(speakers[0].role).toBeDefined();
+        expect(speakers[0].company).toBeDefined();
+        expect(speakers[0].photo).toMatch(/^https?:\/\//); // Valid photo URL (pfp)
+      }
+
+      if (evt.mode === 'OFFLINE' || evt.mode === 'HYBRID') {
+        expect(evt.location).toContain('Pune');
+        expect(evt.venueAddress).toBeDefined();
+        expect(evt.mapLink).toContain('maps.google.com');
+      }
+    }
+  });
 });

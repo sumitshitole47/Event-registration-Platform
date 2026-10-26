@@ -30,6 +30,7 @@ import { useAuth } from '@/lib/auth-context';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { loadRazorpayScript } from '@/lib/razorpay-client';
 import { FALLBACK_EVENTS } from '@/lib/default-events';
+import { playSuccessSound, playModalSound, playClickSound } from '@/lib/sound-effects';
 
 export default function EventRegisterPage() {
   const params = useParams();
@@ -99,9 +100,11 @@ export default function EventRegisterPage() {
     if (couponCode.toUpperCase() === 'EARLYBIRD50') {
       setDiscountPercent(50);
       setCouponApplied(true);
+      playSuccessSound();
     } else if (couponCode.toUpperCase() === 'STUDENT100') {
       setDiscountPercent(100);
       setCouponApplied(true);
+      playSuccessSound();
     } else {
       setCouponError('Invalid coupon code');
     }
@@ -112,6 +115,7 @@ export default function EventRegisterPage() {
     if (navigator?.clipboard) {
       navigator.clipboard.writeText(upiId);
       setCopiedUpi(true);
+      playSuccessSound();
       setTimeout(() => setCopiedUpi(false), 2200);
     }
   };
@@ -182,6 +186,7 @@ export default function EventRegisterPage() {
           spread: 85,
           origin: { y: 0.6 },
         });
+        playSuccessSound();
       } else {
         setVerificationError(
           data.error || 'Failed to verify transaction. Please ensure valid payment reference is provided.'
@@ -255,6 +260,7 @@ export default function EventRegisterPage() {
 
       setPortalOrderData({ ...orderData, finalAmount });
       setShowPaymentPortal(true);
+      playModalSound();
       setSubmitting(false);
     } catch (err: any) {
       console.error(err);

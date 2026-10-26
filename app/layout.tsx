@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
+import { SoundEffectsProvider } from '@/app/components/SoundEffectsProvider';
 import { Navbar } from '@/components/layout/Navbar';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { Footer } from '@/components/layout/Footer';
@@ -29,10 +30,12 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="bg-[#090d16] text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500/30 selection:text-white pb-16 md:pb-0">
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <MobileBottomNav />
-          <Footer />
+          <SoundEffectsProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <MobileBottomNav />
+            <Footer />
+          </SoundEffectsProvider>
         </AuthProvider>
       </body>
     </html>

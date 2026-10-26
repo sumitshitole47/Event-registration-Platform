@@ -22,6 +22,7 @@ import {
   Award,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { SoundToggleButton } from '@/app/components/SoundEffectsProvider';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -250,6 +251,9 @@ export function Navbar() {
                 <span>Host an Event</span>
               </button>
             )}
+
+            {/* Sound Effects Audio Toggle */}
+            <SoundToggleButton />
 
             {/* Notifications Bell */}
             <div className="relative">
