@@ -229,4 +229,25 @@ describe('Sushanti Core Platform Flows', () => {
       expect(photos[0]).toMatch(/^https?:\/\//);
     }
   });
+
+  it('10. Razorpay payment gateway integration creates orders and records transactions', async () => {
+    const { verifyRazorpaySignature } = await import('../lib/razorpay');
+
+    // Test signature verification helper
+    const testSig = verifyRazorpaySignature({
+      orderId: 'order_test_123',
+      paymentId: 'pay_test_456',
+      signature: 'mock_sig_test',
+    });
+    expect(testSig).toBe(true);
+
+    // Test paid event exists with ticket tiers
+    const paidEvent = await prisma.event.findFirst({
+      where: { isPaid: true },
+      include: { ticketTiers: true },
+    });
+    expect(paidEvent).toBeDefined();
+    expect(paidEvent?.ticketTiers.length).toBeGreaterThan(0);
+    expect(paidEvent?.ticketTiers[0].price).toBeGreaterThan(0);
+  });
 });

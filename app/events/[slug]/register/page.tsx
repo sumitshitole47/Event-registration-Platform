@@ -17,11 +17,16 @@ import {
   Check,
   AlertCircle,
   Sparkles,
+  Lock,
+  ExternalLink,
+  Zap,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import QRCode from 'qrcode';
 import { useAuth } from '@/lib/auth-context';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { loadRazorpayScript } from '@/lib/razorpay-client';
+import { FALLBACK_EVENTS } from '@/lib/default-events';
 
 export default function EventRegisterPage() {
   const params = useParams();
@@ -35,8 +40,8 @@ export default function EventRegisterPage() {
     }
   }, [user, isLoadingAuth, slug, router]);
 
-  const [event, setEvent] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [event, setEvent] = useState<any>(() => FALLBACK_EVENTS.find((e) => e.slug === slug || e.id === slug) || null);
+  const [loading, setLoading] = useState(false);
 
   // Form States
   const [registrationMode, setRegistrationMode] = useState<'SOLO' | 'CREATE_TEAM' | 'JOIN_TEAM'>('SOLO');
@@ -51,10 +56,12 @@ export default function EventRegisterPage() {
   // Custom form field answers
   const [formResponses, setFormResponses] = useState<Record<string, any>>({});
   
-  // Processing & Success
+  // Razorpay Gateway & Verification States
   const [submitting, setSubmitting] = useState(false);
   const [registeredTicket, setRegisteredTicket] = useState<any>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [showMockModal, setShowMockModal] = useState(false);
+  const [pendingOrderData, setPendingOrderData] = useState<any>(null);
 
   useEffect(() => {
     if (slug) fetchEvent();
@@ -72,8 +79,6 @@ export default function EventRegisterPage() {
       }
     } catch (e) {
       console.error(e);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -92,31 +97,38 @@ export default function EventRegisterPage() {
     }
   };
 
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      alert('Please select or log in to a demo account first');
-      return;
-    }
-
-    setSubmitting(true);
-
+  // Complete payment verification and ticket minting
+  const handlePaymentVerification = async ({
+    razorpayOrderId,
+    razorpayPaymentId,
+    razorpaySignature,
+    finalAmount,
+    isFree = false,
+  }: {
+    razorpayOrderId?: string;
+    razorpayPaymentId?: string;
+    razorpaySignature?: string;
+    finalAmount: number;
+    isFree?: boolean;
+  }) => {
     try {
-      const selectedTier = event.ticketTiers.find((t: any) => t.id === selectedTierId) || event.ticketTiers[0];
-      const basePrice = selectedTier?.price || 0;
-      const finalAmount = Math.max(0, basePrice * (1 - discountPercent / 100));
-
       const payload = {
-        userId: user.id,
-        ticketTierId: selectedTierId,
+        eventId: event.id,
+        tierId: selectedTierId,
+        userId: user?.id,
+        userEmail: user?.email,
+        registrationMode,
         teamName: registrationMode === 'CREATE_TEAM' ? teamName : undefined,
         joinCode: registrationMode === 'JOIN_TEAM' ? joinCode : undefined,
         customResponses: formResponses,
-        couponCode: couponApplied ? couponCode : undefined,
         amountPaid: finalAmount,
+        isFree,
+        razorpayOrderId,
+        razorpayPaymentId,
+        razorpaySignature,
       };
 
-      const res = await fetch(`/api/events/${event.id}/register`, {
+      const res = await fetch('/api/payments/razorpay/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -125,10 +137,10 @@ export default function EventRegisterPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setRegisteredTicket(data.registration);
+        setRegisteredTicket(data.ticket);
 
         // Generate QR Code data URL
-        const qr = await QRCode.toDataURL(data.registration.qrCodeData, {
+        const qr = await QRCode.toDataURL(data.ticket.qrCodeData, {
           margin: 1,
           width: 256,
           color: {
@@ -140,17 +152,116 @@ export default function EventRegisterPage() {
 
         // Confetti celebration!
         confetti({
-          particleCount: 120,
-          spread: 70,
+          particleCount: 140,
+          spread: 80,
           origin: { y: 0.6 },
         });
       } else {
-        alert(data.error || 'Failed to complete registration');
+        alert(data.error || 'Failed to verify transaction. Please contact support.');
       }
     } catch (err: any) {
       console.error(err);
-      alert('An error occurred during registration');
+      alert('Verification error: ' + (err?.message || 'Network failure'));
     } finally {
+      setSubmitting(false);
+      setShowMockModal(false);
+    }
+  };
+
+  // Main Registration & Razorpay Payment trigger
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      router.push(`/login?redirect=/events/${slug}/register`);
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const selectedTier = event.ticketTiers?.find((t: any) => t.id === selectedTierId) || event.ticketTiers?.[0];
+      const basePrice = selectedTier?.price || 0;
+      const finalAmount = Math.max(0, basePrice * (1 - discountPercent / 100));
+
+      // CASE 1: Free Registration
+      if (finalAmount === 0) {
+        await handlePaymentVerification({
+          finalAmount: 0,
+          isFree: true,
+        });
+        return;
+      }
+
+      // CASE 2: Paid Registration via Razorpay
+      const orderRes = await fetch('/api/payments/razorpay/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: event.id,
+          tierId: selectedTierId,
+          discountPercent,
+          couponCode: couponApplied ? couponCode : undefined,
+        }),
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
+        alert(orderData.error || 'Could not initiate Razorpay order. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+
+      // Load official Razorpay Checkout SDK
+      const scriptLoaded = await loadRazorpayScript();
+
+      if (scriptLoaded && (window as any).Razorpay && !orderData.isTestMock) {
+        // REAL RAZORPAY CHECKOUT MODAL
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amount,
+          currency: orderData.currency || 'INR',
+          name: 'Sushanti Events',
+          description: `${event.title} — ${orderData.tierName}`,
+          image: event.host?.logo || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100',
+          order_id: orderData.orderId,
+          handler: async function (response: any) {
+            // Payment success callback from Razorpay
+            await handlePaymentVerification({
+              razorpayOrderId: response.razorpay_order_id || orderData.orderId,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              finalAmount,
+            });
+          },
+          prefill: {
+            name: user.name || 'Attendee',
+            email: user.email || 'attendee@sushanti.dev',
+          },
+          theme: {
+            color: '#4f46e5', // Brand Indigo
+          },
+          modal: {
+            ondismiss: function () {
+              setSubmitting(false);
+            },
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (resp: any) {
+          alert('Payment Failed: ' + (resp.error?.description || 'Transaction declined'));
+          setSubmitting(false);
+        });
+        rzp.open();
+      } else {
+        // Fallback / Test Mode when RAZORPAY_KEY_ID is not configured yet in .env.local
+        setPendingOrderData({ ...orderData, finalAmount });
+        setShowMockModal(true);
+        setSubmitting(false);
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert('Payment processing error: ' + (err?.message || 'Please try again'));
       setSubmitting(false);
     }
   };
@@ -177,7 +288,7 @@ export default function EventRegisterPage() {
 
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-              Registration Confirmed
+              Registration & Payment Confirmed
             </span>
             <h2 className="text-2xl font-extrabold text-white mt-1 font-display">
               You are in for {event.title}!
@@ -188,20 +299,24 @@ export default function EventRegisterPage() {
           </div>
 
           {/* Ticket Card */}
-          <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 text-left space-y-4">
+          <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 text-left space-y-4 shadow-inner">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
                 <span className="text-[10px] text-slate-500 uppercase font-semibold">Attendee</span>
                 <p className="text-sm font-bold text-white">{user?.name}</p>
+                <span className="text-[10px] text-slate-400">{user?.email}</span>
               </div>
               <div className="text-right">
                 <span className="text-[10px] text-slate-500 uppercase font-semibold">Ticket ID</span>
                 <p className="text-xs font-mono font-bold text-amber-400">{registeredTicket.ticketNumber}</p>
+                <span className="inline-block mt-0.5 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  {registeredTicket.paymentStatus === 'COMPLETED' ? 'PAID VIA RAZORPAY' : 'FREE ENTRY'}
+                </span>
               </div>
             </div>
 
             {/* QR Code Container */}
-            <div className="flex flex-col items-center justify-center py-3 bg-white rounded-xl p-4">
+            <div className="flex flex-col items-center justify-center py-4 bg-white rounded-2xl p-4 shadow-sm">
               {qrDataUrl && (
                 <img
                   src={qrDataUrl}
@@ -209,10 +324,32 @@ export default function EventRegisterPage() {
                   className="w-48 h-48 rounded"
                 />
               )}
-              <span className="text-[11px] text-slate-700 font-mono font-semibold mt-2">
+              <span className="text-[11px] text-slate-800 font-mono font-semibold mt-2">
                 Scan for On-Site Check-In
               </span>
             </div>
+
+            {/* Payment Transaction Details if Paid */}
+            {registeredTicket.amountPaid > 0 && (
+              <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs space-y-1.5">
+                <div className="flex justify-between text-slate-400">
+                  <span>Payment Gateway</span>
+                  <span className="font-semibold text-white">Razorpay Standard</span>
+                </div>
+                {registeredTicket.razorpayPaymentId && (
+                  <div className="flex justify-between text-slate-400">
+                    <span>Payment ID</span>
+                    <span className="font-mono text-emerald-400 text-[11px]">
+                      {registeredTicket.razorpayPaymentId}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between text-slate-400 border-t border-slate-800/80 pt-1.5">
+                  <span>Amount Paid</span>
+                  <span className="font-bold text-white">₹{registeredTicket.amountPaid}</span>
+                </div>
+              </div>
+            )}
 
             {registeredTicket.team && (
               <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between text-xs">
@@ -261,80 +398,57 @@ export default function EventRegisterPage() {
   const finalPrice = Math.max(0, basePrice - discountAmount);
 
   return (
-    <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-      
-      {/* Back Link */}
-      <div className="mb-6">
-        <Link
-          href={`/events/${event.slug}`}
-          className="text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1"
-        >
-          ← Back to {event.title}
-        </Link>
-      </div>
-
-      <div className="rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-8">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 max-w-2xl mx-auto">
+      <div className="rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6">
         
         {/* Header */}
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-            Event Registration
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-1 font-display">
-            Register for {event.title}
-          </h1>
+        <div className="border-b border-slate-800 pb-5">
+          <Link
+            href={`/events/${event.slug}`}
+            className="text-xs text-indigo-400 hover:underline mb-2 inline-block"
+          >
+            ← Back to {event.title}
+          </Link>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-white font-display">
+              Register for Event
+            </h1>
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              {event.mode}
+            </span>
+          </div>
           <p className="text-xs text-slate-400 mt-1">
-            Fill out your details to secure your verifiable ticket pass.
+            Complete the form below to confirm your registration and receive your verifiable QR ticket.
           </p>
         </div>
 
         <form onSubmit={handleRegisterSubmit} className="space-y-6">
           
-          {/* Step 1: Attendee / Team Mode */}
+          {/* Step 1: Solo vs Team Registration */}
           {event.maxTeamSize > 1 ? (
             <div className="space-y-3">
               <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                Participation Type
+                Registration Type
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRegistrationMode('SOLO')}
-                  className={`p-3.5 rounded-xl border text-left transition-all ${
-                    registrationMode === 'SOLO'
-                      ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <p className="text-xs font-bold">Solo / Individual</p>
-                  <p className="text-[10px] opacity-75 mt-0.5">Participate by yourself</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRegistrationMode('CREATE_TEAM')}
-                  className={`p-3.5 rounded-xl border text-left transition-all ${
-                    registrationMode === 'CREATE_TEAM'
-                      ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <p className="text-xs font-bold">Create a Team</p>
-                  <p className="text-[10px] opacity-75 mt-0.5">Lead a new squad</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRegistrationMode('JOIN_TEAM')}
-                  className={`p-3.5 rounded-xl border text-left transition-all ${
-                    registrationMode === 'JOIN_TEAM'
-                      ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <p className="text-xs font-bold">Join Existing Team</p>
-                  <p className="text-[10px] opacity-75 mt-0.5">Use an invite code</p>
-                </button>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'SOLO', label: 'Solo Attendee', icon: Users },
+                  { id: 'CREATE_TEAM', label: 'Create Team', icon: Trophy },
+                  { id: 'JOIN_TEAM', label: 'Join Team', icon: Users },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setRegistrationMode(m.id as any)}
+                    className={`py-3 px-3 rounded-2xl text-xs font-semibold border text-center transition-all ${
+                      registrationMode === m.id
+                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/30'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                    }`}
+                  >
+                    <span>{m.label}</span>
+                  </button>
+                ))}
               </div>
 
               {/* Conditional Team Inputs */}
@@ -432,7 +546,19 @@ export default function EventRegisterPage() {
                       {fld.label} {fld.required && <span className="text-rose-400">*</span>}
                     </label>
 
-                    {fld.type === 'select' ? (
+                    {fld.type === 'text' && (
+                      <input
+                        type="text"
+                        required={fld.required}
+                        value={formResponses[fld.id] || ''}
+                        onChange={(e) =>
+                          setFormResponses({ ...formResponses, [fld.id]: e.target.value })
+                        }
+                        className="w-full px-3.5 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                      />
+                    )}
+
+                    {fld.type === 'select' && (
                       <select
                         required={fld.required}
                         value={formResponses[fld.id] || ''}
@@ -448,17 +574,6 @@ export default function EventRegisterPage() {
                           </option>
                         ))}
                       </select>
-                    ) : (
-                      <input
-                        type="text"
-                        required={fld.required}
-                        placeholder={fld.label}
-                        value={formResponses[fld.id] || ''}
-                        onChange={(e) =>
-                          setFormResponses({ ...formResponses, [fld.id]: e.target.value })
-                        }
-                        className="w-full px-3.5 py-2 text-xs rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                      />
                     )}
                   </div>
                 ))}
@@ -466,7 +581,7 @@ export default function EventRegisterPage() {
             </div>
           )}
 
-          {/* Step 4: Coupon Code */}
+          {/* Coupon Code Section */}
           {event.isPaid && (
             <div className="space-y-2 pt-4 border-t border-slate-800">
               <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
@@ -497,8 +612,8 @@ export default function EventRegisterPage() {
             </div>
           )}
 
-          {/* Price Summary */}
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+          {/* Price Summary & Payment Gateway Notice */}
+          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 text-xs">
             <div className="flex justify-between text-slate-400">
               <span>Ticket Tier</span>
               <span className="font-semibold text-white">{selectedTier?.name || 'Standard'}</span>
@@ -512,23 +627,49 @@ export default function EventRegisterPage() {
             <div className="border-t border-slate-800 pt-2 flex justify-between text-sm font-bold text-white">
               <span>Total Payable</span>
               <span className="text-emerald-400">
-                {finalPrice === 0 ? 'Free' : `₹${finalPrice}`}
+                {finalPrice === 0 ? 'Free Entry' : `₹${finalPrice}`}
               </span>
             </div>
+
+            {/* Razorpay Integration Badge for Paid Passes */}
+            {finalPrice > 0 && (
+              <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Payment Gateway:</span>
+                  </span>
+                  <span className="font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                    Razorpay
+                  </span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
+                  <span>Supported methods:</span>
+                  <span className="font-semibold text-slate-300">
+                    UPI · Cards · NetBanking · Wallets
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Submit */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={submitting}
             className="w-full py-3.5 px-4 rounded-2xl text-xs font-bold bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {submitting ? (
-              <span>Confirming Ticket...</span>
+              <span>Connecting to Razorpay...</span>
+            ) : finalPrice > 0 ? (
+              <>
+                <CreditCard className="w-4 h-4" />
+                <span>Pay ₹{finalPrice} via Razorpay</span>
+              </>
             ) : (
               <>
                 <ShieldCheck className="w-4 h-4" />
-                <span>Confirm & Get QR Ticket</span>
+                <span>Confirm Free Registration</span>
               </>
             )}
           </button>
@@ -536,6 +677,67 @@ export default function EventRegisterPage() {
         </form>
 
       </div>
+
+      {/* Razorpay Test Modal (when keys not yet added to .env.local) */}
+      {showMockModal && pendingOrderData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full border border-indigo-500/40 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-blue-400" />
+                <h3 className="text-sm font-bold text-white font-display">
+                  Razorpay Checkout
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMockModal(false)}
+                className="text-slate-400 hover:text-white p-1 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+              <div className="flex justify-between text-slate-400">
+                <span>Order ID:</span>
+                <span className="font-mono text-white">{pendingOrderData.orderId}</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Event:</span>
+                <span className="font-semibold text-white truncate max-w-[180px]">{pendingOrderData.eventTitle}</span>
+              </div>
+              <div className="flex justify-between text-slate-400 border-t border-slate-800/80 pt-2 font-bold text-sm">
+                <span>Amount:</span>
+                <span className="text-emerald-400">₹{pendingOrderData.finalAmount}</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Razorpay API keys can be set in <code className="text-amber-300">.env.local</code> (<code className="text-xs">RAZORPAY_KEY_ID</code> & <code className="text-xs">RAZORPAY_KEY_SECRET</code>). Click below to authorize transaction:
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  handlePaymentVerification({
+                    razorpayOrderId: pendingOrderData.orderId,
+                    razorpayPaymentId: `pay_test_${Date.now()}`,
+                    razorpaySignature: `mock_sig_${Date.now()}`,
+                    finalAmount: pendingOrderData.finalAmount,
+                  })
+                }
+                className="flex-1 py-3 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>Authorize Razorpay Payment</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

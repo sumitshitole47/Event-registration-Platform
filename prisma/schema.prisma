@@ -173,9 +173,12 @@ model Registration {
   teamId          String?
   team            Team?       @relation(fields: [teamId], references: [id])
   status          String      @default("CONFIRMED") // CONFIRMED, WAITLISTED, REJECTED, CANCELLED
-  paymentStatus   String      @default("FREE") // FREE, COMPLETED, PENDING, REFUNDED
-  amountPaid      Float       @default(0)
-  customResponses String?     // JSON object of answers
+  paymentStatus       String      @default("FREE") // FREE, COMPLETED, PENDING, REFUNDED
+  amountPaid          Float       @default(0)
+  razorpayOrderId     String?
+  razorpayPaymentId   String?
+  razorpaySignature   String?
+  customResponses     String?     // JSON object of answers
   qrCodeData      String
   isCheckedIn     Boolean     @default(false)
   checkedInAt     DateTime?
