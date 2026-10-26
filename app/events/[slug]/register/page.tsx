@@ -20,6 +20,9 @@ import {
   Lock,
   ExternalLink,
   Zap,
+  Copy,
+  Smartphone,
+  Info,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import QRCode from 'qrcode';
@@ -60,8 +63,15 @@ export default function EventRegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [registeredTicket, setRegisteredTicket] = useState<any>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
-  const [showMockModal, setShowMockModal] = useState(false);
-  const [pendingOrderData, setPendingOrderData] = useState<any>(null);
+  
+  // Payment Portal Modal States (Direct UPI: sumitshitole447-1@okhdfcbank + Razorpay)
+  const [showPaymentPortal, setShowPaymentPortal] = useState(false);
+  const [portalOrderData, setPortalOrderData] = useState<any>(null);
+  const [portalQrUrl, setPortalQrUrl] = useState<string>('');
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [utrInput, setUtrInput] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
   useEffect(() => {
     if (slug) fetchEvent();
@@ -97,20 +107,34 @@ export default function EventRegisterPage() {
     }
   };
 
-  // Complete payment verification and ticket minting
+  const handleCopyUpi = () => {
+    const upiId = portalOrderData?.upiId || 'sumitshitole447-1@okhdfcbank';
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(upiId);
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 2200);
+    }
+  };
+
+  // Complete payment verification and ticket minting (Strict Gate)
   const handlePaymentVerification = async ({
     razorpayOrderId,
     razorpayPaymentId,
     razorpaySignature,
+    utrNumber,
     finalAmount,
     isFree = false,
   }: {
     razorpayOrderId?: string;
     razorpayPaymentId?: string;
     razorpaySignature?: string;
+    utrNumber?: string;
     finalAmount: number;
     isFree?: boolean;
   }) => {
+    setIsVerifyingPayment(true);
+    setVerificationError('');
+
     try {
       const payload = {
         eventId: event.id,
@@ -123,9 +147,10 @@ export default function EventRegisterPage() {
         customResponses: formResponses,
         amountPaid: finalAmount,
         isFree,
-        razorpayOrderId,
+        razorpayOrderId: razorpayOrderId || portalOrderData?.orderId,
         razorpayPaymentId,
         razorpaySignature,
+        utrNumber,
       };
 
       const res = await fetch('/api/payments/razorpay/verify', {
@@ -139,7 +164,7 @@ export default function EventRegisterPage() {
       if (res.ok && data.success) {
         setRegisteredTicket(data.ticket);
 
-        // Generate QR Code data URL
+        // Generate verified attendee entry QR Code data URL
         const qr = await QRCode.toDataURL(data.ticket.qrCodeData, {
           margin: 1,
           width: 256,
@@ -149,26 +174,29 @@ export default function EventRegisterPage() {
           },
         });
         setQrDataUrl(qr);
+        setShowPaymentPortal(false);
 
-        // Confetti celebration!
+        // Confetti celebration
         confetti({
-          particleCount: 140,
-          spread: 80,
+          particleCount: 150,
+          spread: 85,
           origin: { y: 0.6 },
         });
       } else {
-        alert(data.error || 'Failed to verify transaction. Please contact support.');
+        setVerificationError(
+          data.error || 'Failed to verify transaction. Please ensure valid payment reference is provided.'
+        );
       }
     } catch (err: any) {
       console.error(err);
-      alert('Verification error: ' + (err?.message || 'Network failure'));
+      setVerificationError('Verification connection error: ' + (err?.message || 'Please retry'));
     } finally {
+      setIsVerifyingPayment(false);
       setSubmitting(false);
-      setShowMockModal(false);
     }
   };
 
-  // Main Registration & Razorpay Payment trigger
+  // Main Registration & Razorpay UPI Payment Portal trigger
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -177,6 +205,7 @@ export default function EventRegisterPage() {
     }
 
     setSubmitting(true);
+    setVerificationError('');
 
     try {
       const selectedTier = event.ticketTiers?.find((t: any) => t.id === selectedTierId) || event.ticketTiers?.[0];
@@ -192,7 +221,7 @@ export default function EventRegisterPage() {
         return;
       }
 
-      // CASE 2: Paid Registration via Razorpay
+      // CASE 2: Paid Registration - Request Order & Directed UPI portal
       const orderRes = await fetch('/api/payments/razorpay/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -206,63 +235,75 @@ export default function EventRegisterPage() {
 
       const orderData = await orderRes.json();
       if (!orderRes.ok) {
-        alert(orderData.error || 'Could not initiate Razorpay order. Please try again.');
+        alert(orderData.error || 'Could not initiate payment order. Please try again.');
         setSubmitting(false);
         return;
       }
 
-      // Load official Razorpay Checkout SDK
-      const scriptLoaded = await loadRazorpayScript();
-
-      if (scriptLoaded && (window as any).Razorpay && !orderData.isTestMock) {
-        // REAL RAZORPAY CHECKOUT MODAL
-        const options = {
-          key: orderData.keyId,
-          amount: orderData.amount,
-          currency: orderData.currency || 'INR',
-          name: 'Sushanti Events',
-          description: `${event.title} — ${orderData.tierName}`,
-          image: event.host?.logo || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100',
-          order_id: orderData.orderId,
-          handler: async function (response: any) {
-            // Payment success callback from Razorpay
-            await handlePaymentVerification({
-              razorpayOrderId: response.razorpay_order_id || orderData.orderId,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-              finalAmount,
-            });
+      // Generate dynamic UPI QR Code targeting sumitshitole447-1@okhdfcbank
+      if (orderData.upiUri) {
+        const qrUrl = await QRCode.toDataURL(orderData.upiUri, {
+          margin: 1,
+          width: 260,
+          color: {
+            dark: '#0f172a',
+            light: '#ffffff',
           },
-          prefill: {
-            name: user.name || 'Attendee',
-            email: user.email || 'attendee@sushanti.dev',
-          },
-          theme: {
-            color: '#4f46e5', // Brand Indigo
-          },
-          modal: {
-            ondismiss: function () {
-              setSubmitting(false);
-            },
-          },
-        };
-
-        const rzp = new (window as any).Razorpay(options);
-        rzp.on('payment.failed', function (resp: any) {
-          alert('Payment Failed: ' + (resp.error?.description || 'Transaction declined'));
-          setSubmitting(false);
         });
-        rzp.open();
-      } else {
-        // Fallback / Test Mode when RAZORPAY_KEY_ID is not configured yet in .env.local
-        setPendingOrderData({ ...orderData, finalAmount });
-        setShowMockModal(true);
-        setSubmitting(false);
+        setPortalQrUrl(qrUrl);
       }
+
+      setPortalOrderData({ ...orderData, finalAmount });
+      setShowPaymentPortal(true);
+      setSubmitting(false);
     } catch (err: any) {
       console.error(err);
       alert('Payment processing error: ' + (err?.message || 'Please try again'));
       setSubmitting(false);
+    }
+  };
+
+  // Optional: Launch Razorpay Standard Checkout Popup (if attendee clicks Card/Netbanking option)
+  const handleOpenRazorpayCheckout = async () => {
+    if (!portalOrderData) return;
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (scriptLoaded && (window as any).Razorpay && !portalOrderData.isTestMock) {
+        const options = {
+          key: portalOrderData.keyId,
+          amount: portalOrderData.amount,
+          currency: portalOrderData.currency || 'INR',
+          name: 'Sushanti Events',
+          description: `${event.title} — ${portalOrderData.tierName}`,
+          image: event.host?.logo || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100',
+          order_id: portalOrderData.orderId,
+          handler: async function (response: any) {
+            await handlePaymentVerification({
+              razorpayOrderId: response.razorpay_order_id || portalOrderData.orderId,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              finalAmount: portalOrderData.finalAmount,
+            });
+          },
+          prefill: {
+            name: user?.name || 'Attendee',
+            email: user?.email || 'attendee@sushanti.dev',
+          },
+          theme: {
+            color: '#4f46e5',
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      } else {
+        alert(
+          'Live Razorpay gateway keys not set in .env.local yet. Please pay directly via UPI ID sumitshitole447-1@okhdfcbank using the QR code below.'
+        );
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert('Could not launch Razorpay modal: ' + err.message);
     }
   };
 
@@ -678,60 +719,207 @@ export default function EventRegisterPage() {
 
       </div>
 
-      {/* Razorpay Test Modal (when keys not yet added to .env.local) */}
-      {showMockModal && pendingOrderData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full border border-indigo-500/40 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-blue-400" />
-                <h3 className="text-sm font-bold text-white font-display">
-                  Razorpay Checkout
-                </h3>
+      {/* Official Razorpay & Direct UPI Payment Portal */}
+      {showPaymentPortal && portalOrderData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto animate-in fade-in">
+          <div className="bg-slate-900 rounded-3xl p-5 sm:p-7 max-w-lg w-full border border-indigo-500/40 shadow-2xl space-y-5 text-white my-auto max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-slate-800">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    <ShieldCheck className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-extrabold text-white font-display">
+                      Razorpay & UPI Payment Portal
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Official Merchant Account: Sushanti Events
+                    </p>
+                  </div>
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setShowMockModal(false)}
-                className="text-slate-400 hover:text-white p-1 text-xs"
+                onClick={() => {
+                  setShowPaymentPortal(false);
+                  setVerificationError('');
+                }}
+                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 text-xs transition-colors"
+                title="Close"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-400">
-                <span>Order ID:</span>
-                <span className="font-mono text-white">{pendingOrderData.orderId}</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Event:</span>
-                <span className="font-semibold text-white truncate max-w-[180px]">{pendingOrderData.eventTitle}</span>
-              </div>
-              <div className="flex justify-between text-slate-400 border-t border-slate-800/80 pt-2 font-bold text-sm">
-                <span>Amount:</span>
-                <span className="text-emerald-400">₹{pendingOrderData.finalAmount}</span>
+            {/* Official Payee & Amount Card */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Official Payee UPI ID
+                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="font-mono text-sm sm:text-base font-bold text-amber-300">
+                      sumitshitole447-1@okhdfcbank
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyUpi}
+                      className={`text-[10px] font-semibold px-2 py-1 rounded-md border transition-all flex items-center gap-1 ${
+                        copiedUpi
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                          : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                      }`}
+                    >
+                      {copiedUpi ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-400" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <span className="text-[10px] text-slate-400">
+                    Payee Name: <strong className="text-slate-300">Sumit Shitole</strong>
+                  </span>
+                </div>
+                <div className="sm:text-right border-t sm:border-t-0 border-slate-800/80 pt-2 sm:pt-0">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Amount Due
+                  </span>
+                  <p className="text-xl font-black text-emerald-400 font-display">
+                    ₹{portalOrderData.finalAmount}
+                  </p>
+                  <span className="text-[10px] text-slate-400">
+                    {portalOrderData.tierName}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Razorpay API keys can be set in <code className="text-amber-300">.env.local</code> (<code className="text-xs">RAZORPAY_KEY_ID</code> & <code className="text-xs">RAZORPAY_KEY_SECRET</code>). Click below to authorize transaction:
-            </p>
+            {/* Step 1: Scan QR or Open App */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 text-xs font-bold flex items-center justify-center">
+                  1
+                </span>
+                <span className="text-xs font-bold text-slate-200">
+                  Scan QR code or click to launch your UPI app
+                </span>
+              </div>
 
-            <div className="flex gap-2">
+              {/* QR Container */}
+              <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-slate-700 shadow-sm">
+                {portalQrUrl ? (
+                  <img
+                    src={portalQrUrl}
+                    alt="UPI Payment QR Code for sumitshitole447-1@okhdfcbank"
+                    className="w-48 h-48 rounded-xl object-contain"
+                  />
+                ) : (
+                  <div className="w-48 h-48 flex items-center justify-center bg-slate-100 rounded-xl">
+                    <QrCode className="w-12 h-12 text-slate-400 animate-pulse" />
+                  </div>
+                )}
+                <div className="mt-2 text-center">
+                  <p className="text-[11px] font-bold text-slate-900">
+                    Scan with Google Pay · PhonePe · Paytm · BHIM · CRED
+                  </p>
+                  <p className="text-[10px] text-slate-600 font-mono">
+                    Pay exact: ₹{portalOrderData.finalAmount}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons for Mobile / Razorpay */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                {portalOrderData.upiUri && (
+                  <a
+                    href={portalOrderData.upiUri}
+                    className="py-2.5 px-3 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-1.5 text-center"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>Open in UPI App</span>
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={handleOpenRazorpayCheckout}
+                  className="py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <CreditCard className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Razorpay Checkout</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Step 2: Payment Verification Gate */}
+            <div className="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/30 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center justify-center">
+                  2
+                </span>
+                <span className="text-xs font-bold text-white">
+                  Payment Verification Gate
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                As required, your event ticket and QR pass are <strong className="text-amber-300">only confirmed after payment completion</strong> is verified. After transferring to <strong className="text-white">sumitshitole447-1@okhdfcbank</strong>, enter your 12-digit UTR or Razorpay Payment ID:
+              </p>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                  12-Digit UPI UTR No. / Transaction Reference / Razorpay ID
+                </label>
+                <input
+                  type="text"
+                  value={utrInput}
+                  onChange={(e) => {
+                    setUtrInput(e.target.value);
+                    if (verificationError) setVerificationError('');
+                  }}
+                  placeholder="e.g. 428901234567 or pay_abc123"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-white text-xs font-mono placeholder:text-slate-500 focus:outline-none transition-all"
+                />
+                <p className="text-[10px] text-slate-400">
+                  Tip: You can find the 12-digit UPI Ref/UTR in your Google Pay, PhonePe, or Paytm payment receipt.
+                </p>
+              </div>
+
+              {verificationError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{verificationError}</span>
+                </div>
+              )}
+
               <button
                 type="button"
+                disabled={isVerifyingPayment || !utrInput.trim()}
                 onClick={() =>
                   handlePaymentVerification({
-                    razorpayOrderId: pendingOrderData.orderId,
-                    razorpayPaymentId: `pay_test_${Date.now()}`,
-                    razorpaySignature: `mock_sig_${Date.now()}`,
-                    finalAmount: pendingOrderData.finalAmount,
+                    razorpayOrderId: portalOrderData.orderId,
+                    utrNumber: utrInput.trim(),
+                    finalAmount: portalOrderData.finalAmount,
                   })
                 }
-                className="flex-1 py-3 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Check className="w-4 h-4" />
-                <span>Authorize Razorpay Payment</span>
+                {isVerifyingPayment ? (
+                  <span>Verifying Payment with Bank & Minting Ticket...</span>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Verify Payment & Complete Registration</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

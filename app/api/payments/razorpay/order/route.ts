@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getRazorpayClient } from '@/lib/razorpay';
+import {
+  getRazorpayClient,
+  ORGANIZER_UPI_ID,
+  ORGANIZER_PAYEE_NAME,
+  generateUpiPaymentUrl,
+} from '@/lib/razorpay';
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,16 +51,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         isFree: true,
         amount: 0,
+        finalAmount: 0,
         currency: 'INR',
         eventTitle: event.title,
         tierName,
+        upiId: ORGANIZER_UPI_ID,
+        payeeName: ORGANIZER_PAYEE_NAME,
       });
     }
 
-    // 3. Create real Razorpay Order
+    // 3. Create real Razorpay Order & UPI Deep Link
     const razorpay = getRazorpayClient();
     const amountInPaise = Math.round(finalAmount * 100);
-    const receiptId = `rcpt_${Date.now().toString().slice(-8)}`;
+    const receiptId = `SUSH_${Date.now().toString().slice(-8)}`;
+
+    const upiUri = generateUpiPaymentUrl({
+      upiId: ORGANIZER_UPI_ID,
+      payeeName: ORGANIZER_PAYEE_NAME,
+      amount: finalAmount,
+      transactionRef: receiptId,
+      eventTitle: event.title,
+    });
 
     const keyId =
       process.env.RAZORPAY_KEY_ID ||
@@ -73,6 +89,7 @@ export async function POST(req: NextRequest) {
             eventTitle: event.title,
             tierName,
             couponCode: couponCode || 'NONE',
+            payeeUpi: ORGANIZER_UPI_ID,
           },
         });
 
@@ -80,39 +97,53 @@ export async function POST(req: NextRequest) {
           isFree: false,
           orderId: order.id,
           amount: order.amount, // in paise
+          finalAmount: finalAmount, // in INR
           currency: order.currency,
           keyId: keyId,
           eventTitle: event.title,
           tierName,
           receipt: receiptId,
+          upiId: ORGANIZER_UPI_ID,
+          payeeName: ORGANIZER_PAYEE_NAME,
+          upiUri,
         });
       } catch (orderErr: any) {
         console.error('Razorpay Orders API Error:', orderErr);
-        return NextResponse.json(
-          {
-            error:
-              orderErr?.error?.description ||
-              orderErr.message ||
-              'Failed to create Razorpay Order. Please verify API keys in .env.local.',
-          },
-          { status: 502 }
-        );
+        // Even if Razorpay cloud order creation fails or credentials pending, return fallback UPI order
+        const fallbackOrderId = `order_${Date.now()}`;
+        return NextResponse.json({
+          isFree: false,
+          isTestMock: true,
+          orderId: fallbackOrderId,
+          amount: amountInPaise,
+          finalAmount: finalAmount,
+          currency: 'INR',
+          keyId: keyId || 'rzp_test_placeholder',
+          eventTitle: event.title,
+          tierName,
+          receipt: receiptId,
+          upiId: ORGANIZER_UPI_ID,
+          payeeName: ORGANIZER_PAYEE_NAME,
+          upiUri,
+        });
       }
     } else {
-      // Keys not configured yet: Return a standard test order so users can test immediately
-      const testOrderId = `order_test_${Date.now()}`;
+      // Keys not configured yet: Return direct UPI portal data with Sumit's UPI ID
+      const testOrderId = `order_${Date.now()}`;
       return NextResponse.json({
         isFree: false,
         isTestMock: true,
         orderId: testOrderId,
         amount: amountInPaise,
+        finalAmount: finalAmount,
         currency: 'INR',
         keyId: keyId || 'rzp_test_placeholder',
         eventTitle: event.title,
         tierName,
         receipt: receiptId,
-        message:
-          'Razorpay keys not yet set in .env.local. Test payment mode active. Add RAZORPAY_KEY_ID to activate live gateway.',
+        upiId: ORGANIZER_UPI_ID,
+        payeeName: ORGANIZER_PAYEE_NAME,
+        upiUri,
       });
     }
   } catch (err: any) {

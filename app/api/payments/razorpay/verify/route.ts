@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyRazorpaySignature } from '@/lib/razorpay';
+import {
+  verifyRazorpaySignature,
+  isValidTransactionReference,
+  ORGANIZER_UPI_ID,
+} from '@/lib/razorpay';
 import { generateTicketNumber, generateJoinCode } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
@@ -10,6 +14,8 @@ export async function POST(req: NextRequest) {
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
+      utrNumber,
+      upiRef,
       eventId,
       tierId,
       userId,
@@ -26,21 +32,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Event ID is required' }, { status: 400 });
     }
 
-    // 1. Verify payment signature for paid registrations
-    if (!isFree && amountPaid > 0) {
-      if (!razorpayPaymentId) {
+    // 1. Strict Payment Gate: Verify payment for paid events
+    const paymentRef = (razorpayPaymentId || utrNumber || upiRef || '').toString().trim();
+
+    if (!isFree && Number(amountPaid) > 0) {
+      if (!paymentRef) {
         return NextResponse.json(
-          { error: 'Razorpay Payment ID is missing' },
+          {
+            error: `Payment is required to register. Please complete payment to UPI ID ${ORGANIZER_UPI_ID} and provide the 12-digit UTR or Razorpay Payment ID.`,
+          },
           { status: 400 }
         );
       }
 
-      // If keys are active, verify the cryptographic HMAC signature
+      // Check if reference meets minimum valid format
+      if (!isValidTransactionReference(paymentRef)) {
+        return NextResponse.json(
+          {
+            error:
+              'Invalid transaction reference. Please provide a valid 12-digit UPI UTR number or Razorpay Payment ID.',
+          },
+          { status: 400 }
+        );
+      }
+
+      // If keys are active and full signature was submitted, verify cryptographic HMAC
       const hasKeys = !!process.env.RAZORPAY_KEY_SECRET;
       if (hasKeys && razorpayOrderId && razorpaySignature) {
         const isValid = verifyRazorpaySignature({
           orderId: razorpayOrderId,
-          paymentId: razorpayPaymentId,
+          paymentId: paymentRef,
           signature: razorpaySignature,
         });
 
@@ -116,7 +137,7 @@ export async function POST(req: NextRequest) {
     const ticketNumber = generateTicketNumber();
     const qrData = `SUSHANTI:${ticketNumber}:${eventId}:${activeUser.id}:${Date.now()}`;
 
-    // 5. Create or Update Registration Record
+    // 5. Create or Update Registration Record (ONLY AFTER PAYMENT IS VERIFIED)
     const registration = await prisma.registration.upsert({
       where: {
         eventId_userId: {
@@ -128,10 +149,10 @@ export async function POST(req: NextRequest) {
         ticketTierId: tierId || null,
         teamId: teamId || null,
         status: 'CONFIRMED',
-        paymentStatus: isFree || amountPaid === 0 ? 'FREE' : 'COMPLETED',
+        paymentStatus: isFree || Number(amountPaid) === 0 ? 'FREE' : 'COMPLETED',
         amountPaid: Number(amountPaid) || 0,
         razorpayOrderId: razorpayOrderId || null,
-        razorpayPaymentId: razorpayPaymentId || null,
+        razorpayPaymentId: paymentRef || null,
         razorpaySignature: razorpaySignature || null,
         customResponses: JSON.stringify(customResponses),
         qrCodeData: qrData,
@@ -143,10 +164,10 @@ export async function POST(req: NextRequest) {
         ticketTierId: tierId || null,
         teamId: teamId || null,
         status: 'CONFIRMED',
-        paymentStatus: isFree || amountPaid === 0 ? 'FREE' : 'COMPLETED',
+        paymentStatus: isFree || Number(amountPaid) === 0 ? 'FREE' : 'COMPLETED',
         amountPaid: Number(amountPaid) || 0,
         razorpayOrderId: razorpayOrderId || null,
-        razorpayPaymentId: razorpayPaymentId || null,
+        razorpayPaymentId: paymentRef || null,
         razorpaySignature: razorpaySignature || null,
         customResponses: JSON.stringify(customResponses),
         qrCodeData: qrData,

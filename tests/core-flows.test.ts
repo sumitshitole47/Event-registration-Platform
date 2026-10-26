@@ -231,7 +231,33 @@ describe('Sushanti Core Platform Flows', () => {
   });
 
   it('10. Razorpay payment gateway integration creates orders and records transactions', async () => {
-    const { verifyRazorpaySignature } = await import('../lib/razorpay');
+    const {
+      verifyRazorpaySignature,
+      ORGANIZER_UPI_ID,
+      generateUpiPaymentUrl,
+      isValidTransactionReference,
+    } = await import('../lib/razorpay');
+
+    // Test official merchant UPI ID
+    expect(ORGANIZER_UPI_ID).toBe('sumitshitole447-1@okhdfcbank');
+
+    // Test UPI Deep Link generation for Google Pay / PhonePe / Paytm
+    const upiLink = generateUpiPaymentUrl({
+      amount: 499,
+      transactionRef: 'SUSH_TEST123',
+      eventTitle: 'Sanskriti Mahotsav Pune',
+    });
+    expect(upiLink).toContain('upi://pay?');
+    expect(upiLink).toContain('pa=sumitshitole447-1%40okhdfcbank');
+    expect(upiLink).toContain('am=499.00');
+    expect(upiLink).toContain('cu=INR');
+    expect(upiLink).toContain('tr=SUSH_TEST123');
+
+    // Test Transaction Reference / UTR validation
+    expect(isValidTransactionReference('428901234567')).toBe(true); // 12-digit standard UTR
+    expect(isValidTransactionReference('pay_K1234567890abc')).toBe(true); // Razorpay payment ID
+    expect(isValidTransactionReference('')).toBe(false);
+    expect(isValidTransactionReference('short')).toBe(false);
 
     // Test signature verification helper
     const testSig = verifyRazorpaySignature({
