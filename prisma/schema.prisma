@@ -1,0 +1,314 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String         @id @default(cuid())
+  name            String
+  email           String         @unique
+  password        String?
+  avatar          String?
+  headline        String?
+  bio             String?
+  college         String?
+  skills          String?        // JSON array of strings
+  links           String?        // JSON object: { github, linkedin, twitter, website }
+  resumeUrl       String?
+  role            String         @default("CONSUMER") // CONSUMER, HOST, ADMIN
+  activeMode      String         @default("CONSUMER") // CONSUMER, HOST
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  hostProfile     HostProfile?
+  hostMemberships HostMember[]
+  registrations   Registration[]
+  teamsLed        Team[]
+  teamMemberships TeamMember[]
+  submissions     Submission[]
+  scoresGiven     Score[]
+  certificates    Certificate[]
+  reviews         Review[]
+  bookmarks       Bookmark[]
+  notifications   Notification[]
+  teammatePosts   TeammatePost[]
+}
+
+model HostProfile {
+  id               String       @id @default(cuid())
+  userId           String       @unique
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationName String
+  slug             String       @unique
+  type             String       @default("COMMUNITY") // CLUB, COMPANY, COMMUNITY, INDIVIDUAL
+  tagline          String?
+  bio              String?
+  logo             String?
+  banner           String?
+  website          String?
+  isVerified       Boolean      @default(false)
+  socialLinks      String?      // JSON object
+  followersCount   Int          @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  events           Event[]
+  members          HostMember[]
+}
+
+model HostMember {
+  id        String      @id @default(cuid())
+  hostId    String
+  host      HostProfile @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String      @default("ADMIN") // OWNER, ADMIN, VOLUNTEER, JUDGE
+  createdAt DateTime    @default(now())
+
+  @@unique([hostId, userId])
+}
+
+model Event {
+  id                  String         @id @default(cuid())
+  slug                String         @unique
+  title               String
+  tagline             String
+  description         String         // Rich Markdown content
+  category            String         // HACKATHON, CODING_CONTEST, CASE_STUDY, WORKSHOP, MEETUP, WEBINAR, CULTURAL, CONFERENCE
+  mode                String         @default("ONLINE") // ONLINE, OFFLINE, HYBRID
+  bannerUrl           String
+  logoUrl             String?
+  gallery             String?        // JSON array of photo URLs
+  location            String?        // City / Campus
+  venueAddress        String?        // Full address
+  mapLink             String?
+  meetingUrl          String?        // Virtual link
+  startDate           DateTime
+  endDate             DateTime
+  regStartDate        DateTime
+  regEndDate          DateTime
+  isPaid              Boolean        @default(false)
+  isPublished         Boolean        @default(true)
+  isFeatured          Boolean        @default(false)
+  visibility          String         @default("PUBLIC") // PUBLIC, PRIVATE, INVITE_ONLY
+  minTeamSize         Int            @default(1)
+  maxTeamSize         Int            @default(4)
+  prizePool           String?        // e.g. "₹2,50,000"
+  prizes              String?        // JSON array of { title, amount, perks }
+  sponsors            String?        // JSON array of { name, tier, logo }
+  eligibilityCriteria String?        // JSON array of strings
+  rules               String?
+  faqs                String?        // JSON array of { question, answer }
+  customFields        String?        // JSON array of { id, label, type, required, options }
+  hostId              String
+  host                HostProfile    @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  viewsCount          Int            @default(0)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  rounds              EventRound[]
+  ticketTiers         TicketTier[]
+  coupons             Coupon[]
+  registrations       Registration[]
+  teams               Team[]
+  submissions         Submission[]
+  certificates        Certificate[]
+  reviews             Review[]
+  bookmarks           Bookmark[]
+  teammatePosts       TeammatePost[]
+}
+
+model EventRound {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  order       Int
+  title       String
+  description String
+  type        String   @default("SUBMISSION") // QUIZ, SUBMISSION, INTERVIEW, PRESENTATION
+  startDate   DateTime
+  endDate     DateTime
+  isElimination Boolean @default(false)
+}
+
+model TicketTier {
+  id            String         @id @default(cuid())
+  eventId       String
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  price         Float          @default(0)
+  capacity      Int            @default(500)
+  available     Int            @default(500)
+  perks         String?        // JSON array of strings
+  salesEnd      DateTime?
+  registrations Registration[]
+}
+
+model Coupon {
+  id             String    @id @default(cuid())
+  eventId        String?
+  event          Event?    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  code           String    @unique
+  discountPercent Float    @default(0)
+  discountFlat   Float     @default(0)
+  maxUses        Int       @default(100)
+  usedCount      Int       @default(0)
+  validUntil     DateTime?
+}
+
+model Registration {
+  id              String      @id @default(cuid())
+  ticketNumber    String      @unique
+  eventId         String
+  event           Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticketTierId    String?
+  ticketTier      TicketTier? @relation(fields: [ticketTierId], references: [id])
+  teamId          String?
+  team            Team?       @relation(fields: [teamId], references: [id])
+  status          String      @default("CONFIRMED") // CONFIRMED, WAITLISTED, REJECTED, CANCELLED
+  paymentStatus   String      @default("FREE") // FREE, COMPLETED, PENDING, REFUNDED
+  amountPaid      Float       @default(0)
+  customResponses String?     // JSON object of answers
+  qrCodeData      String
+  isCheckedIn     Boolean     @default(false)
+  checkedInAt     DateTime?
+  checkedInBy     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([eventId, userId])
+}
+
+model Team {
+  id            String         @id @default(cuid())
+  eventId       String
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name          String
+  joinCode      String         @unique
+  leaderId      String
+  leader        User           @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  status        String         @default("FORMING") // FORMING, READY
+  createdAt     DateTime       @default(now())
+  members       TeamMember[]
+  registrations Registration[]
+  submissions   Submission[]
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  teamId   String
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("MEMBER") // LEADER, MEMBER
+  joinedAt DateTime @default(now())
+
+  @@unique([teamId, userId])
+}
+
+model Submission {
+  id          String      @id @default(cuid())
+  eventId     String
+  event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  teamId      String?
+  team        Team?       @relation(fields: [teamId], references: [id])
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  tagline     String?
+  description String
+  repoUrl     String?
+  demoUrl     String?
+  videoUrl    String?
+  fileUrl     String?
+  track       String?
+  status      String      @default("SUBMITTED") // DRAFT, SUBMITTED, SHORTLISTED, WINNER
+  submittedAt DateTime    @default(now())
+  scores      Score[]
+}
+
+model Score {
+  id           String     @id @default(cuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  judgeId      String
+  judge        User       @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  innovation   Float      @default(0)
+  execution    Float      @default(0)
+  design       Float      @default(0)
+  presentation Float      @default(0)
+  totalScore   Float      @default(0)
+  feedback     String?
+  createdAt    DateTime   @default(now())
+
+  @@unique([submissionId, judgeId])
+}
+
+model Certificate {
+  id             String   @id @default(cuid())
+  verificationId String   @unique
+  eventId        String
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipientName  String
+  eventTitle     String
+  type           String   @default("PARTICIPANT") // WINNER_1, WINNER_2, WINNER_3, FINALIST, PARTICIPANT
+  rank           String?
+  issuedAt       DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, SUCCESS, ALERT, REMINDER
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model TeammatePost {
+  id              String   @id @default(cuid())
+  eventId         String
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rolesLookingFor String   // Comma separated roles
+  message         String
+  status          String   @default("OPEN") // OPEN, CLOSED
+  createdAt       DateTime @default(now())
+}

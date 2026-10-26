@@ -1,0 +1,338 @@
+# ASSIGNMENT NO. 7 
+
+Use Case Modelling, User Story Development, and Workflow Design for the Selected Problem AIM: 
+
+To study and develop use cases, user stories, and workflow designs for a selected engineering problem in order to understand user requirements and design an effective solution. 
+
+OBJECTIVES: 
+
+1. To understand the concepts of use case modelling, user stories, and workflow design. 
+
+2. To identify users and stakeholders associated with the selected problem. 
+
+3. To identify functional requirements from user needs. 
+
+4. To develop use cases for the proposed solution. 
+
+5. To write user stories from the user's perspective. 
+
+6. To design a workflow representing the sequence of activities. 
+
+7. To analyze how the proposed solution satisfies user requirements. 
+
+###### PROBLEM STATEMENT: 
+
+To analyze the selected engineering project, identify its users, stakeholders, and requirements, and develop suitable use cases, user stories, and workflow designs that represent how the proposed solution will operate. 
+
+#### SOFTWARE REQUIRED: 
+
+- « Microsoft Word / Google Docs 
+
+- « Web Browser 
+
+- ¢ Internet Connection 
+
+- ¢ Diagram/Flowcharttool 
+
+- « PowerPoint or any suitable presentation software 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+
+###### INPUT: 
+
+- « Selected engineering problem. 
+
+- ¢ Problem statement. 
+
+- e User requirements. 
+
+- « Identified users and stakeholders. 
+
+- ¢ Functional requirements. 
+
+- ¢ Information about the proposed solution. 
+
+###### OUTPUT: 
+
+- « Identified users and stakeholders. 
+
+- ¢ — List of functional requirements. 
+
+- « Use case model/use case diagram. 
+
+- ¢ User stories. 
+
+- « Workflow diagram. 
+
+- e Use case description table. 
+
+- e Analysis of user requirements and proposed solution. 
+
+###### THEORY: 
+
+###### 1. Use Case Modelling 
+
+Use case modelling is a technique used to describe how different users interact with a system to achieve specific goals. 
+
+- A use case represents a particular function or service provided by a system. 
+
+- For example, in an Online Food Ordering System, common use cases include: 
+
+   - ¢ Register/Login 
+
+   - « Browse Food 
+
+   - « Search Food 
+
+   - « Place Order 
+
+   - « Make Payment 
+
+   - ¢ Track Order 
+
+   - ¢ Cancel Order 
+
+   - « Manage Orders 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+Pune) 
+
+2. Actors 
+
+An actor is a person, organization, or external system that interacts with the proposed system. 
+
+Examples include: 
+
+- « Student 
+
+- « Customer 
+
+- ¢ Administrator 
+
+- « Teacher 
+
+- ¢ Delivery Person 
+
+- « Payment Gateway 
+
+Actors are identified according to the selected problem. 
+
+###### 3. Use Case Diagram 
+
+A use case diagram represents the interaction between actors and system functions. Basic representation: 
+
+Actor — System Function / Use Case 
+
+For example: 
+
+Customer — Login — Select Product — Place Order — Make Payment 
+
+The use case diagram helps developers understand system requirements from the user's point of view. 
+
+4, User Stories 
+
+A user story describes a requirement from the perspective of the user. 
+
+A common format is: 
+
+“As a [user], I want [function], so that [benefit].” 
+
+###### Example: 
+
+As a student, I want to receive notifications about upcoming assignments, so that I can submit them on time. 
+
+User stories should be: 
+
+- ¢ Simple 
+
+- ¢ Clear 
+
+- ¢ User ~~-~~ focused 
+
+- ¢ Testable e Valuable 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+
+###### 5. Workflow Design 
+
+A workflow represents the sequence of activities required to complete a task. 
+
+For example, an online food ordering workflow can be represented as: 
+
+Login — Browse Food — Select Food > Add to Cart > Place Order — Make Payment > Order Confirmation — Delivery 
+
+Workflow design helps identify: 
+
+- « Sequence of activities 
+
+- ¢ Decision points 
+
+- « Inputs and outputs 
+
+- « System actions 
+
+- ¢ User actions 
+
+- ¢ Possible errors or alternative paths 
+
+###### 6. Use Case Description 
+
+Each important use case can be described using parameters such as: 
+
+#### Parameter Description 
+
+Use Case Name Name of the system function 
+
+Actor User interacting with the system Goal Purpose ofthe use case Precondition Condition before starting Input Information provided to system 
+
+Main Flow Normal sequence ofactivities 
+
+Alternative Flow Alternative sequence 
+
+Exception Possible error condition 
+
+7. User Story Development Process 
+
+User stories can be developed using the following process: 
+
+User Identification > User Need — Requirement — User Story — Acceptance Criteria Validation 
+
+###### Example: 
+
+Problem: Students have difficulty tracking attendance. 
+
+User Story: 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+Pune) 
+
+“As a student, I want to view my attendance percentage online so that I can monitor my attendance and maintain the required percentage.” 
+
+Acceptance Criteria: 
+
+- ¢ Student can log in. 
+
+- « Student can view subjec ~~t-~~ wise attendance. 
+
+- « System displays attendance percentage. 
+
+- ¢ Student receives warning when attendance is below the required level. 
+
+###### 8. Workflow Design Process 
+
+The workflow can be developed using the following steps: 
+
+Problem Identification — Identify Actors — Identify Activities — Arrange Activities — Add Decision Points > Design Workflow — Validate Workflow 
+
+Decision points can be represented using conditions such as: 
+
+Ts Login Valid? 
+
+- « Yes — Continue 
+
+- e« NoDisplay Error 
+
+9. Parameters for Analysis 
+
+- Parameter Purpose 
+
+Problem Define the selected problem 
+
+Actors Identify users and stakeholders 
+
+- Requirements Identify user/system requirements 
+
+Use Cases Identify system functions 
+
+User Stories Describe requirements from user perspective 
+
+Workflow Represent sequence of activities 
+
+Decision Points Identify conditions and alternatives 
+
+Inputs. Identify information entering the system 
+
+Outputs Identify results produced 
+
+- Exceptions Identify possible errors 
+
+- Validation Check whether requirements are satisfied 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+
+###### PRACTICAL TASK: 
+
+Select any rea ~~l-~~ world engineering problem such as: 
+
+- « Smart Attendance System 
+
+- ¢ Online Food Ordering System 
+
+- ¢ Hospital Appointment System 
+
+- e Smart Parking System 
+
+- ¢ College Complaint Management System 
+
+- « Library Management System 
+
+- ¢ Online Learning System 
+
+- « Waste Management System 
+
+Perform the following activities: 
+
+1. Define the selected problem. 
+
+2. Identify at least 3 actors/users. 
+
+Identify at least 8 use cases. 
+
+   3. Prepare a Use Case Diagram. 
+
+   4. Write at least 5 user stories using the format: 
+
+- As a [user], I want [function], so that [benefit]. 
+
+   5. Prepare a use case description for any 3 important use cases. 
+
+   6. Design a workflow for the main system process. 
+
+   7. Identify at least 2 decision points in the workflow. 
+
+   8. Identify possible exceptions or alternative flows. 
+
+   9. Explain how the proposed design satisfies the identified user requirements. 
+
+###### CONCLUSION: 
+
+Thus, use case modelling, user story development, and workflow design were successfully studied and applied to a selected engineering problem. The practical helped in identifying users, understanding their requirements, defining system functions, and representing the system workflow. These techniques provide a user ~~-~~ centered approach for designing effective and practical engineering solutions. 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+

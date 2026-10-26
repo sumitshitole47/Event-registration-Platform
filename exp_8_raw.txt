@@ -1,0 +1,316 @@
+# EXPERIMENT NO. 8 
+
+UI/UX Design and Software Prototyping Using Suitable Design Tools or Low ~~-C~~ ode/No ~~-~~ Code Platforms 
+
+###### AIM 
+
+To study and develop a user interface and user experience design for the selected engineering project and create an interactive prototype using a suitable design or prototyping tool. 
+
+###### OBJECTIVES 
+
+1. To understand the concepts of User Interface (UI) and User Experience (UX). 
+
+2. To analyze the users, stakeholders, and requirements of the selected engineering project. 
+
+3. To convert identified requirements, user stories, and use cases into UI/UX designs. 
+
+4. To design user workflows and navigation for the proposed solution. 
+
+5. To create screen mock ~~-u~~ ps and an interactive prototype. 
+
+6. To perform a basic feasibility study and identify suitable technologies. 
+
+7. To collect feedback and improve the proposed UI/UX design. 
+
+###### PROBLEM STATEMENT 
+
+To analyze the selected engineering project, identify its users, requirements, use cases, and workflow, and design an easy ~~-t~~ o ~~-~~ use UI/UX prototype representing the major screens, navigation flow, and important user interactions of the proposed solution. 
+
+##### SOFTWARE / TOOLS REQUIRED 
+
+- « Web Browser with Internet Connection 
+
+- ¢ Microsoft Word / Google Docs 
+
+- e Any suitable UI/UX design or prototyping tool 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+- (An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+Pune) 
+
+- « Figma/ Adobe XD / Canva or similar tool 
+
+- e — draw.io / Lucidchart / Microsoft Visio or similar tool, if required 
+
+- « Presentation software, if required 
+
+###### INPUT 
+
+- « Selected engineering project/topic and its problem statement 
+
+- ¢ Identified users and stakeholders 
+
+- ¢ Functional and non ~~-f~~ unctional requirements 
+
+- « User stories developed in the previous assignment 
+
+- ¢ Use cases developed in the previous assignment 
+
+- ¢ Workflow diagram of the selected project 
+
+- ¢ Proposed solution and major features 
+
+###### OUTPUT 
+
+- « Requirement ~~-b~~ ased UI/UX design 
+
+- e User interface screen mock ~~-u~~ ps 
+
+- « Navigation/workflow design 
+
+- « Interactive prototype 
+
+- ¢ Basic feasibility analysis 
+
+- « Suggested technologies 
+
+- « User/peer feedback 
+
+- « Improved UI/UX design based on feedback 
+
+###### THEORY 
+
+###### 1. User Interface (UI) 
+
+User Interface is the visual and interactive part ofa software system through which users interact with the system. 
+
+Ul includes: 
+
+« Buttons 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+Pune) 
+
+- « Menus 
+
+- « Forms 
+
+- « Icons 
+
+- ¢ Text fields 
+
+- « Images 
+
+- « Navigation elements 
+
+- ¢ Dashboards 
+
+- e Screen layouts 
+
+A good UI should be simple, clear, consistent, and easy to use. 
+
+###### 2. User Experience (UX) 
+
+User Experience describes how easily and comfortably users can interact with a system and complete their required tasks. 
+
+A good UX should provide: 
+
+- « Easy navigation 
+
+- ¢ Clear information 
+
+- ¢ Simple interaction 
+
+- « Consistent design 
+
+- ¢ Quick task completion 
+
+- e Useful feedback 
+
+- e Error prevention 
+
+###### 3. Requirement Analysis for UI/UX 
+
+UI/UX design should be based on the requirements of<sup>theselectedengineeringproject.</sup> 
+
+Requirements can be classified as: 
+
+Type Description Example Functional Functions that the system should perform Student can view attendance Functional Services provided by the system Faculty can mark attendance Non- ~~f~~ unctional Quality or performance requirement Interface should be easy to use Non- ~~f~~ unctional Security or usability requirement User data should be protected 4, Stakeholders and Users 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+- (An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+
+A stakeholder is a person, organization, or external entity that uses, manages, or is affected by the system. 
+
+Examples include: 
+
+- ¢ Student 
+
+- « Faculty 
+
+- « Administrator 
+
+- « Customer 
+
+- e Doctor 
+
+- «Patient 
+
+- ¢ Delivery Person 
+
+The actual users and stakeholders should be identified according to the selected engineering project. 
+
+5. User Stories 
+
+A user story represents a requirement from the user's perspective. 
+
+Common format: 
+
+“As a [user], I want [function], so that [benefit].” 
+
+Example: 
+
+As a student, I want to view my attendance percentage so that I can monitor my attendance. 
+
+User stories help designers understand what users expect from the system. 
+
+6. Use Cases 
+
+A use case represents an interaction between an actor and the system to achieve a specific goal. 
+
+For example, in a Smart Attendance System: 
+
+Actor Use Cases Student Login, View Attendance, View Report Faculty Login, Mark Attendance, View Report 
+
+Administrator Manage Users, Generate Reports 
+
+The actual actors and use cases should be taken from the selected engineering project. 
+
+7. User Workflow and Navigation 
+
+A workflow represents the sequence of activities performed by the user or system. 
+
+For example: 
+
+Login — Dashboard — Select Service — Perform Action — Submit — Confirmation 
+
+<u>TWOTRTIOW</u> ~~Te SEMEN~~ <u>Mie Orden and Naviparon or Uy SIs:</u> 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+Pune) 
+
+The UI design should follow the workflow and use cases developed in the previous assignment. 
+
+8. UI Screen Mock ~~-~~ up 
+
+A mock ~~-u~~ p is a visual representation ofa user interface screen. 
+
+Common screens may include: 
+
+- « Login 
+
+- « Registration 
+
+- ¢ Dashboard 
+
+- « Main Service 
+
+- « Profile 
+
+- ¢ Search 
+
+- e Report 
+
+- ¢ Notification 
+
+The required screens should be selected according to the functions 
+
+###### 9.Interactive Prototype 
+
+An interactive prototype is a working visual model of the proposed interface in which screens are connected to demonstrate navigation and user interactions. 
+
+For example: 
+
+Login Screen + Dashboard — Service Screen + Submit — Confirmation 
+
+Tools such as Figma, Adobe XD, Canva, or other suitable prototyping tools can be used. 10. Feasibility Study 
+
+- A feasibility study determines whether the proposed solution can be practically implemented. Important feasibility factors include: 
+
+   - ¢ Technical Feasibility ~~—~~ availability of required technologies and skills. 
+
+   - e Economic Feasibility ~~—~~ estimated development and operational cost. 
+
+   - ¢ Operational Feasibility ~~—~~ ease of use and suitability for users. 
+
+   - « Schedule Feasibility ~~—~~ possibility of completing the project within the available time. 
+
+###### 10. Feasibility Study 
+
+A feasibility study determines whether the proposed solution can be practically implemented. Important feasibility factors include: 
+
+- e Technical Feasibility ~~—~~ availability of required technologies and skills. 
+
+- « Economic Feasibility ~~—~~ estimated development and operational cost. 
+
+- ¢ Operational Feasibility ~~—~~ ease of use and suitability for users. 
+
+- ¢ Schedule Feasibility ~~—~~ possibility of completing the project within the available time. 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+- (An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+
+###### 11. Feedback and UI/UX Improvement 
+
+Feedback helps identify usability problems and areas for improvement. 
+
+Feedback can be collected regarding: 
+
+- « Ease of navigation 
+
+- ¢ Screen layout 
+
+- « Readability e Button placement 
+
+- ¢ Information clarity e Overall usability 
+
+The feedback should be analyzed and at least one UI/UX improvement should be implemented. 
+
+###### SUGGESTED WORKFLOW 
+
+Selected Project — Requirements — Users/Stakeholders — User Stories + Use Cases > Workflow — UI Screen Design — Interactive Prototype + Feedback — Improvement — Final UI/UX Design 
+
+###### EXPECTED OUTPUT 
+
+Activity Expected Output Project Analysis Project problem, objective, and proposed solution Requirement Analysis Minimum5 functional/non ~~-f~~ unctional requirements User Analysis Identified users and stakeholders UI Screen . . . Identification List of required UI screens UI Design Minimum 5 UI screen mock ~~-u~~ ps Navigation Design Screen navigation/workflow Prototype a Development Interactive prototype Feasibility Study Technical, economic, operational, and schedule feasibility Technology Selection Suggested technologies/tools Feedback Analysis User/peer feedback UI/UX Improvement Minimum 2 suggested improvements and at least 1 implemented improvement Final Analysis Explanation of how UI/UX satisfies requirements and use cases 
+
+###### CONCLUSION 
+
+Thus, UI/UX design and software prototyping were successfully studied and applied to the selected engineering project. The existing requirements, user stories, use cases, and workflow were converted into UI screen designs and an interactive prototype. A basic feasibility study was performed, suitable technologies were identified, and feedback was collected to improve the prototype. The practical helped in understanding how user ~~-~~ centered UI/UX design can be used to develop an effective and easy ~~-t~~ o ~~-~~ use software solution. 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+

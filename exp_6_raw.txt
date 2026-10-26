@@ -1,0 +1,288 @@
+# ASSIGNMENT NO. 6 
+
+Exploration of AI ~~-A~~ ssisted Development Tools: Hands ~~-~~ on Use of Generative AI Tools for Idea Generation, Coding Assistance, Content Generation, and Documentation 
+
+AIM 
+
+To study and practically explore AI ~~-a~~ ssisted development tools and understand their applications in idea generation, coding assistance, content generation, and technical documentation. 
+
+###### OBJECTIVES 
+
+1. To understand the concept of Generative AI and Al ~~-a~~ ssisted development. 
+
+2. To explore different Generative AI tools used for software development and content creation. 
+
+3. To use AI tools for refining the selected engineering project and solution approach. 
+
+4. To use AI tools for coding assistance, debugging, and code explanation. 
+
+5. To generate technical content and documentation using AI tools. 
+
+6. To understand the advantages, limitations, and responsible use of Al ~~-a~~ ssisted development tools. 
+
+###### PROBLEM STATEMENT 
+
+To explore and apply Generative AI tools for analyzing, refining, and supporting the development of the student's selected engineering project, including solution development, coding or algorithm assistance, content generation, debugging, and technical documentation. 
+
+##### SOFTWARE / TOOLS REQUIRED 
+
+- « Web Browser with Internet Connection 
+
+- « Any suitable Generative AI tool 
+
+- ¢ Programming environment/IDE, if coding assistance is used 
+
+- « Microsoft Word / Google Docs 
+
+- «Presentation or diagram tool, if required 
+
+###### INPUT 
+
+- e Selected engineering project/topic and its problem statement 
+
+- e User requirements 
+
+- « Prompts or queries given to the Generative AI tool 
+
+- e Programming requirements, if coding assistance is used « Content/documentation requirements 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+
+###### OUTPUT 
+
+- « Al ~~-a~~ ssisted/refined solution approaches or improvements for the selected project 
+
+- « Improved/refined problem ~~-s~~ olving approach 
+
+- e Al ~~-a~~ ssisted source code or code suggestions 
+
+- « Code explanation and debugging suggestions 
+
+- « Al ~~-g~~ enerated technical content 
+
+- ¢ Project documentation prepared with AI assistance 
+
+- « Analysis of advantages and limitations of Al ~~-a~~ ssisted development 
+
+###### THEORY 
+
+###### 1. Generative AT 
+
+Generative Al is a type of Artificial Intelligence that can generate new content such as text, code, explanations, summaries, designs, and documentation based on user prompts. 
+
+Generative AI can be used as a supporting tool during different stages of engineering project development. 
+
+2. AI ~~-A~~ ssisted Development 
+
+Al ~~L-~~ assisted development means using AI tools to support activities such as: 
+
+- ¢ Project analysis 
+
+- ¢ Solution development 
+
+- « Idea generation 
+
+- « Feature identification 
+
+- « Coding 
+
+- ¢ Code explanation 
+
+- « Debugging 
+
+- « Algorithm development 
+
+- « Content generation 
+
+- ¢ Technical documentation 
+
+Al assists the developer, but the final technical decisions should be made after proper verification. 
+
+###### 3. Idea Generation and Solution Refinement Using AIT 
+
+Generative AI can be used to analyze and refine the already selected engineering project. 
+
+Instead of selecting a new problem, students can use AI to: 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+- (An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+Pune) 
+
+- ¢ Generate alternative solution approaches 
+
+- « Identify useful features 
+
+- « Suggest improvements 
+
+- « Suggest suitable technologies or methods 
+
+- « Identify possible challenges 
+
+- « Suggest possible solutions 
+
+- « Compare different approaches 
+
+- « Improve the existing project approach 
+
+The basic process is: 
+
+Selected Project + AI Prompt — Project Analysis — Solution/Feature Suggestions — Evaluation — Refinement 
+
+Al ~~-g~~ enerated suggestions should be evaluated according to: 
+
+- « Feasibility 
+
+- ¢ Technical suitability 
+
+- ¢ Cost 
+
+- « Complexity 
+
+- « Usefulness 
+
+- e Innovation 
+
+- ¢ Project requirements 
+
+Only relevant and technically suitable suggestions should be incorporated into the project. 
+
+###### 4. Coding Assistance Using Generative AI 
+
+Generative AI can assist in programming by: 
+
+- « Generating sample code 
+
+- e Explaining code 
+
+- « Suggesting algorithms 
+
+- ¢ Finding errors 
+
+- « Suggesting corrections 
+
+- ¢ Improving code structure 
+
+- « Generating pseudocode 
+
+However, Al ~~-g~~ enerated code must be reviewed, tested, and verified before being used in the project. 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+Pune) 
+
+5. Content Generation and Documentation 
+
+Generative AI can help prepare: 
+
+- « Project descriptions 
+
+- « Abstracts 
+
+- « Module descriptions 
+
+- ¢ Technical explanations 
+
+- « Algorithm descriptions 
+
+- ¢ User documentation 
+
+- ¢ Project reports 
+
+Students should verify the generated content for technical accuracy and relevance to their project. 
+
+###### 6. Responsible Use of Generative AI 
+
+Students should: 
+
+- « Verify Al ~~-g~~ enerated information. 
+
+- « Test Al ~~-g~~ enerated code. 
+
+- « Avoid blindly copying Al ~~-g~~ enerated content. 
+
+- ¢ Protect confidential project information. 
+
+- « Check technical correctness. 
+
+- e Use Alas a supporting tool. 
+
+- « Apply their own engineering judgment. 
+
+- ¢ Clearly acknowledge AI assistance when required. 
+
+###### PRACTICAL TASK 
+
+Use the already selected engineering project/topic and a Generative AI tool to perform the following activities: 
+
+1. Analyze the selected project and generate/refine at least 3 possible solution approaches, features, or improvements. 
+
+2. Select the most suitable approach for the project and explain why it was selected. 
+
+3. Identify the major modules, features, or functional requirements of the selected project using Al assistance. 
+
+4. Generate a small program, algorithm, or pseudocode related to one module or feature of the selected project. 
+
+5. Ask the AI tool to explain the generated code, algorithm, or pseudocode and verify the explanation. 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+      - Pune) 
+
+6. Ask the AI tool to identify and correct at least one error in the code/algorithm or suggest one technical improvement. 
+
+7. Generate a short project description or abstract based on the selected project. 
+
+8. Prepare a one ~~-~~ page technical documentation for the selected project using AI assistance. 
+
+9. Verify and critically evaluate the Al ~~-g~~ enerated outputs for: 
+
+   - Accuracy 
+
+   - Relevance 
+
+   - Feasibility 
+
+   - Technical correctness 
+
+10. Record the advantages, limitations, and responsible use of Generative AI during the project development process. 
+
+###### EXPECTED OUTPUT 
+
+Activity Expected Output 
+
+Project Analysis Analysis of the selected project 
+
+Solution Refinement Minimum 3 approaches/features/improvements 
+
+Module Identification Major modules and functional requirements 
+
+Coding Assistance Program, algorithm, or pseudocode Code Explanation Explanation and verification Debugging Error correction or technical improvement Content Generation Project description/abstract Documentation One ~~-p~~ age technical documentation Evaluation Accuracy, relevance, feasibility, and correctness analysis 
+
+###### CONCLUSION 
+
+Thus, Generative Al ~~-a~~ ssisted development tools were successfully explored for the development of the selected engineering project. AI tools were used for project analysis, solution refinement, module identification, coding or algorithm assistance, debugging, content generation, and technical documentation. The practical helped in understanding how Generative AI can support project development and improve productivity. It was also understood that Al ~~-g~~ enerated outputs must be critically evaluated, verified, tested, and responsibly used before being incorporated into the proje 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+Pune) 
+

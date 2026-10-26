@@ -1,0 +1,353 @@
+## ASSIGNMENT NO. 9 
+
+###### Prototype Development, Testing, and Validation of the Proposed Software Solution 
+
+###### AIM 
+
+To develop, test, and validate the prototype ofthe selected engineering project and evaluate whether the proposed software solution satisfies the identified user requirements. 
+
+###### OBJECTIVES 
+
+1. To understand the concepts of prototype development, software testing, and validation. 2. To develop or refine the prototype of<sup>theselectedengineeringproject.</sup> 
+
+3. To implement the major user interactions and workflow in the prototype. 
+
+4. To prepare test cases for validating the prototype. 
+
+5. To test the functionality, usability, navigation, and user interactions of the prototype. 6. To identify errors, usability issues, and missing requirements. 
+
+7. To collect feedback and validate the proposed software solution. 8. To improve the prototype based on testing and validation results. 
+
+###### PROBLEM STATEMENT 
+
+To develop the prototype of the selected engineering project based on the requirements, use cases, user stories, workflow, and UI/UX design developed in the previous assignments, and to test and validate the prototype to determine whether it satisfies the identified user requirements. 
+
+##### SOFTWARE / TOOLS REQUIRED 
+
+- ¢ Web Browser with Internet Connection 
+
+- « Figma/ Adobe XD /Canva or suitable prototyping tool 
+
+- « Microsoft Word / Google Docs 
+
+- ¢ Presentation software, if required 
+
+- « draw.io / Lucidchart / Microsoft Visio or similar tool, if required 
+
+- « Suitable development environment, if coding is used 
+
+###### INPUT 
+
+- ¢ Selected engineering project/topic and problem statement e Functional and non ~~-f~~ unctional requirements 
+
+- ¢ User stories 
+
+- « Use cases 
+
+- ¢ Workflow/navigation diagram 
+
+- « UI/UX prototype developed in Experiment No. 8 
+
+- ¢ User feedback, if already available 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+Pune) 
+
+###### OUTPUT 
+
+- ¢ Refined software prototype 
+
+- ¢ Functional prototype interactions 
+
+- « Test cases 
+
+- ¢ Test results 
+
+- ¢ Identified errors/issues 
+
+- ¢ Usability and navigation evaluation 
+
+- e Validation results 
+
+- ¢ User/peer feedback 
+
+- « Corrective improvements 
+
+«Final validated prototype 
+
+###### THEORY 
+
+###### 1. Prototype Development 
+
+A prototype is an early model of a proposed software solution used to demonstrate its features, workflow, user interface, and interactions before complete software development. A prototype helps stakeholders and users understand how the proposed system will work. Prototype development may include: 
+
+- « Ulscreens 
+
+- « Navigation 
+
+- ¢ Buttons and links 
+
+- e Forms 
+
+- ¢ User interactions 
+
+- « System responses 
+
+- «¢ Workflow implementation 
+
+- ¢ Basic functional simulation 
+
+The prototype should be developed based on the requirements, use cases, user stories, and workflow prepared in the previous assignments. 
+
+###### 2. Types of Prototypes 
+
+Common types of prototypes include: Low- ~~F~~ idelity Prototype 
+
+A simple representation of the interface using basic layouts, sketches, or wireframes. High ~~-F~~ idelity Prototype 
+
+A detailed and interactive representation containing realistic screens, navigation, content, and interactions. 
+
+For this practical, students should develop an interactive prototype appropriate to their selected engineering project. 
+
+###### 4. Prototype Development Process 
+
+The prototype can be developed using the following process: Requirements — Use Cases — User Stories — Workflow — UI Design — Prototype Development — Testing — Validation — Improvement The prototype should represent the major functions and user interactions of the proposed solution. 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+- Pune) 
+
+###### 5. Software Testing 
+
+Software testing is the process of checking whether the proposed software or prototype behaves as expected. 
+
+Testing helps identify: 
+
+- ¢ Functional errors 
+
+- e Navigation errors 
+
+- « Missing features 
+
+- e Incorrect outputs 
+
+- ¢ Usability problems ¢ Broken links or interactions 
+
+- « Requirement gap 
+
+###### 6. Test Case 
+
+A test case defines the input, action, expected result, and actual result used to verify a particular function. 
+
+A basic test case can contain: 
+
+|Parameter|Description|
+|---|---|
+|Test Case ID|Unique identification number|
+|Feature/Function|Function being tested|
+|Input|Data or actionprovided|
+|Test Steps|Steps performed during testing|
+|Expected Result|Expected system response|
+|Actual Result|Actual system response|
+|Status|Pass/Fail|
+|Remarks|<br>Observationorissueidentified|
+
+
+
+###### 7. Functional Testing 
+
+Functional testing checks whether the functions of the prototype work according to the specified requirements. 
+
+Examples: 
+
+- ¢ Login works correctly. 
+
+- ¢ Button opens the correct screen. 
+
+- « Form accepts valid input. 
+
+- ¢ Submit operation displays the expected response. 
+
+- e Navigation follows the defined workflow. 
+
+###### 8. Usability Testing 
+
+Usability testing evaluates how easily users can understand and use the prototype. 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University 
+
+Pune) 
+
+It considers: 
+
+- « Ease ofnavigation 
+
+- ¢ Screen clarity 
+
+- ¢ Readability 
+
+- ¢ Button placement 
+
+- « Ease of completing tasks 
+
+- « Consistency ofinterface ¢ User satisfaction 
+
+###### 9. Validation 
+
+Validation checks whether the proposed solution satisfies the actual needs and requirements of the intended users. 
+
+A prototype can be validated by: 
+
+- ¢ Requirement comparison 
+
+- « Use case verification 
+
+- ¢ User story verification 
+
+- ¢ Workflow verification 
+
+- « Test case execution 
+
+- ¢ Peer/user feedback 
+
+- e Usability evaluation 
+
+The main question during validation is: 
+
+“Does the proposed solution solve the identified problem and satisfy the user requirements?” 
+
+###### 10. Feedback and Improvement 
+
+Testing and validation may identify errors or areas that require improvement. The improvement process can be represented as: 
+
+Test — Identify Issue + Analyze Cause — Modify Prototype — Retest — Validate 
+
+At least one important improvement should be implemented based on the testing or feedback results. 
+
+###### PRACTICAL TASK 
+
+Use the already selected engineering project and the prototype developed in Experiment No. 8 and perform the following activities: 
+
+1. Review the selected project's requirements, user stories, use cases, and workflow. 2. Review and refine the UI/UX prototype developed in Experiment No. 8. 
+
+3. Develop or refine the prototype to represent the major screens, features, navigation, and user interactions of the proposed solution. 
+
+4. Implement at least 5 important user interactions or functions in the prototype. 
+
+5. Prepare at least 8 test cases for testing the prototype. 
+
+6. Test the following aspects where applicable: 
+
+   - Functional behaviour 
+
+   - Navigation 
+
+   - o User interactions o Input validation o Workflow <mark>2.</mark> ~~sabili~~ 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+- (An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+
+7. Record the expected result and actual result for each test case. 
+
+8. Identify and record at least 3 errors, issues, missing requirements, or usability problems, if applicable. 
+
+9. Analyze the test results and classify each test case as Pass or Fail. 
+
+10. Collect feedback from classmates, peers, or potential users regarding the prototype. 
+
+11. Compare the prototype with the identified requirements, user stories, and use cases. 
+
+12. Identify at least 2 improvements based on testing and feedback. 
+
+13. Implement at least one important improvement in the prototype. 
+
+14. Retest the modified prototype to verify whether the identified issue has been resolved. 
+
+15. Prepare a final validation report explaining whether the proposed software solution satisfies the major user requirements. 
+
+##### TEST CASE FORMAT 
+
+|Test<br>Case _<br>ID|_Feature/Function|Input/Action|Expected Resu|lt<br>|Actual<br>uy<br>Result|StatusRemarks|
+|---|---|---|---|---|---|---|
+|TCOL|.<br>Login|Enter<br>valid<br>login <br>details|User<br>should<br>dashboard|reach|||
+|7<br>TC02|ati<br>Navigation|Click<br>dashboard <br>button|Correct<br>shouldopen|screen|||
+|TCO3|Form|Entervalid data|Data<br>should<br>accepted|be|||
+|TC04|Invalid Input|Enter incorrect data|Appropriate<br>should appear|crror|||
+|TCOS|.<br>.<br>MainFunction|Perform<br>major <br>system function|Expected<br>shouldbe disp|result<br>layed|||
+|TCO6|BackNavigation _|Click<br>back/navigation<br>.<br>option|Previous<br>.<br>should open|screen<br>.|||
+|TCO7|Submission|Submit<br>completed <br>form|Confirmation <br>be displayed|should|||
+|TCO8|Logout|Click logout|esshouldre<br>loginscreen|turn to|||
+
+
+
+Note: The test cases should be modified according to the selected engineering project. 
+
+###### VALIDATION TABLE 
+
+|Validation Area|Validation Method|Result|
+|---|---|---|
+|Requirements|Compare prototype with requirements||
+|User Stories|Verify user story functions||
+|Use Cases|Verify majoruse cases||
+|Workflow|Check navigation and activity sequence||
+|UI/UX|Evaluate usability and screen design||
+|Functional Testing|Execute test cases||
+|User Feedback|Collect and analyze feedback||
+|~~Improvements~~|~~Implement and retestchanges~~||
+
+
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+
+###### SUGGESTED WORKFLOW 
+
+Selected Project — Requirements Review — Prototype Development/Refinement — Test Case Preparation — Testing — Issue Identification + Feedback — Improvement — Retesting > Validation — Final Prototype 
+
+|EXPECTED OUTPUT<br>||
+|---|---|
+|Activity|Expected Output|
+|Project Review|Verified requirements, user stories, and use cases|
+|Prototype Development|Refined interactive prototype|
+|Function Implementation|Minimum 5 important interactions/functions|
+|Test Case Preparation|Minimum8 test cases|
+|Prototype Testing|Test results with Pass/Fail status|
+|Issue Identification|Minimum3 issues/errors/usabilityproblems, ifapplicable|
+|Feedback Collection|User/peer feedback|
+|Requirement Validation|Requirement satisfaction analysis|
+|Improvement|Minimum 2 suggested improvements|
+|Prototype Modification|At least | implemented improvement|
+|Retesting|Verification ofimplemented improvement|
+|FinalValidation|Finalvalidationreportandvalidatedprototype|
+
+
+
+###### CONCLUSION 
+
+Thus, prototype development, testing, and validation of the proposed software solution were successfully performed for the selected engineering project. The practical helped in verifying the functionality, navigation, usability, and requirement satisfaction of the prototype. Testing and user feedback were used to identify issues and improve the proposed solution. The final prototype was validated against the identified requirements, user stories, use cases, and workflow, providing a refined basis for further software development. 
+
+JSPM’s 
+
+##### Rajarshi Shahu College of Engineering, Tathwade Pune-33 
+
+(An Empowered Autonomous Institute Affiliated to Savitribai Phule Pune University Pune) 
+
