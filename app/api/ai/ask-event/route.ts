@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { FALLBACK_EVENTS } from '@/lib/default-events';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,14 +12,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'eventId and question are required' }, { status: 400 });
     }
 
-    const event = await prisma.event.findFirst({
-      where: { OR: [{ id: eventId }, { slug: eventId }] },
-      include: {
-        ticketTiers: true,
-        rounds: true,
-        host: true,
-      },
-    });
+    let event: any = null;
+    try {
+      event = await prisma.event.findFirst({
+        where: { OR: [{ id: eventId }, { slug: eventId }] },
+        include: {
+          ticketTiers: true,
+          rounds: true,
+          host: true,
+        },
+      });
+    } catch (dbErr) {
+      console.warn('Database query fallback for AI Q&A:', dbErr);
+    }
+
+    if (!event) {
+      event = FALLBACK_EVENTS.find((e) => e.id === eventId || e.slug === eventId);
+    }
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
@@ -29,7 +41,7 @@ export async function POST(req: NextRequest) {
     // Smart contextual retrieval
     if (qLower.includes('free') || qLower.includes('fee') || qLower.includes('price') || qLower.includes('cost') || qLower.includes('ticket')) {
       if (event.isPaid) {
-        const tiers = event.ticketTiers.map((t) => `${t.name}: ₹${t.price}`).join(', ');
+        const tiers = (event.ticketTiers || []).map((t: any) => `${t.name}: ₹${t.price}`).join(', ');
         answer = `This is a paid event. Available ticket options: ${tiers || 'Check registration options'}. You can apply valid coupon codes at checkout!`;
       } else {
         answer = `Participation in ${event.title} is completely free! Standard registrations include full access to mentor sessions, talks, and digital certificates.`;
@@ -38,7 +50,7 @@ export async function POST(req: NextRequest) {
       if (event.minTeamSize === 1 && event.maxTeamSize === 1) {
         answer = `This is an individual competition (team size of 1). Solo participation only!`;
       } else {
-        answer = `Team sizes for ${event.title} are minimum ${event.minTeamSize} and maximum ${event.maxTeamSize} members. You can either register with existing teammates or find peers on Sushanti's "Find Teammates" board.`;
+        answer = `Team sizes for ${event.title} are minimum ${event.minTeamSize || 1} and maximum ${event.maxTeamSize || 4} members. You can either register with existing teammates or find peers on Sushanti's "Find Teammates" board.`;
       }
     } else if (qLower.includes('prize') || qLower.includes('cash') || qLower.includes('reward') || qLower.includes('win')) {
       answer = `The total prize pool for this event is ${event.prizePool || 'substantial cash & developer perks'}! Winners also receive cloud computing credits, fast-track interviews, and official verifiable winner certificates.`;
@@ -52,7 +64,7 @@ export async function POST(req: NextRequest) {
       }
     } else if (qLower.includes('round') || qLower.includes('stage') || qLower.includes('schedule') || qLower.includes('timeline') || qLower.includes('when')) {
       if (event.rounds && event.rounds.length > 0) {
-        const roundList = event.rounds.map((r) => `• ${r.title} (${r.type})`).join('\n');
+        const roundList = event.rounds.map((r: any) => `• ${r.title} (${r.type})`).join('\n');
         answer = `The event schedule features ${event.rounds.length} key stages:\n${roundList}\nEvent runs from ${new Date(event.startDate).toLocaleDateString()} to ${new Date(event.endDate).toLocaleDateString()}.`;
       } else {
         answer = `The event runs from ${new Date(event.startDate).toLocaleDateString()} to ${new Date(event.endDate).toLocaleDateString()}. Check the timeline section for exact session timings.`;
@@ -60,7 +72,8 @@ export async function POST(req: NextRequest) {
     } else if (qLower.includes('eligibility') || qLower.includes('who can') || qLower.includes('college') || qLower.includes('student')) {
       answer = `Open to undergraduate students, postgraduates, fresh graduates, and professional engineers who are passionate about building. Cross-college and cross-organization squads are warmly welcome!`;
     } else {
-      answer = `Regarding "${question}": For ${event.title}, hosted by ${event.host.organizationName}, please review the official rules tab. If you have custom requests, you can reach out directly via the event discussion board or discord channel!`;
+      const orgName = event.host?.organizationName || 'Sushanti Events';
+      answer = `Regarding "${question}": For ${event.title}, hosted by ${orgName}, please review the official rules tab. If you have custom requests, you can reach out directly via the event discussion board or discord channel!`;
     }
 
     return NextResponse.json({

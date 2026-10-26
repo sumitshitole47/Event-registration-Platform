@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { FALLBACK_EVENTS } from '@/lib/default-events';
 import {
   getRazorpayClient,
   ORGANIZER_UPI_ID,
   ORGANIZER_PAYEE_NAME,
   generateUpiPaymentUrl,
 } from '@/lib/razorpay';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,10 +20,19 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Fetch event and tier details
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-      include: { ticketTiers: true },
-    });
+    let event: any = null;
+    try {
+      event = await prisma.event.findUnique({
+        where: { id: eventId },
+        include: { ticketTiers: true },
+      });
+    } catch (dbErr) {
+      console.warn('Database query fallback in payment order:', dbErr);
+    }
+
+    if (!event) {
+      event = FALLBACK_EVENTS.find((e) => e.id === eventId || e.slug === eventId);
+    }
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
@@ -30,12 +42,12 @@ export async function POST(req: NextRequest) {
     let tierName = 'General Pass';
 
     if (tierId) {
-      const selectedTier = event.ticketTiers.find((t) => t.id === tierId);
+      const selectedTier = (event.ticketTiers || []).find((t: any) => t.id === tierId);
       if (selectedTier) {
         tierPrice = selectedTier.price;
         tierName = selectedTier.name;
       }
-    } else if (event.ticketTiers.length > 0) {
+    } else if (event.ticketTiers && event.ticketTiers.length > 0) {
       tierPrice = event.ticketTiers[0].price;
       tierName = event.ticketTiers[0].name;
     }

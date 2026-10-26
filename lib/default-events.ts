@@ -35,6 +35,7 @@ export interface EventItem {
     logo?: string | null;
   };
   ticketTiers?: Array<{
+    id?: string;
     price: number;
     name: string;
   }>;
