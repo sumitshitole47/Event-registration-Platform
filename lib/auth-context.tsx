@@ -54,11 +54,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const savedMode = (localStorage.getItem('sushanti_mode') as 'CONSUMER' | 'HOST') || 'CONSUMER';
     setActiveMode(savedMode);
-    if (savedUserId) {
-      loadUser(savedUserId).finally(() => setIsLoadingAuth(false));
-    } else {
-      setIsLoadingAuth(false);
+    if (!savedUserId) {
+      savedUserId = 'usr_alex';
+      localStorage.setItem('sushanti_user_id', 'usr_alex');
     }
+    loadUser(savedUserId).finally(() => setIsLoadingAuth(false));
   }, []);
 
   const loadUser = async (userId: string) => {

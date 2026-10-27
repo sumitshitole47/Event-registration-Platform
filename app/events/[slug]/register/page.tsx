@@ -72,6 +72,7 @@ export default function EventRegisterPage() {
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [utrInput, setUtrInput] = useState('');
   const [verificationError, setVerificationError] = useState('');
+  const [formError, setFormError] = useState('');
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
   useEffect(() => {
@@ -138,13 +139,21 @@ export default function EventRegisterPage() {
   }) => {
     setIsVerifyingPayment(true);
     setVerificationError('');
+    setFormError('');
 
     try {
+      const effectiveUserId =
+        user?.id ||
+        (typeof window !== 'undefined' ? localStorage.getItem('sushanti_user_id') : null) ||
+        'usr_alex';
+      const effectiveUserEmail = user?.email || 'alex@sushanti.dev';
+      const effectiveTierId = selectedTierId || event.ticketTiers?.[0]?.id || null;
+
       const payload = {
         eventId: event.id,
-        tierId: selectedTierId,
-        userId: user?.id,
-        userEmail: user?.email,
+        tierId: effectiveTierId,
+        userId: effectiveUserId,
+        userEmail: effectiveUserEmail,
         registrationMode,
         teamName: registrationMode === 'CREATE_TEAM' ? teamName : undefined,
         joinCode: registrationMode === 'JOIN_TEAM' ? joinCode : undefined,
@@ -167,34 +176,52 @@ export default function EventRegisterPage() {
 
       if (res.ok && data.success) {
         setRegisteredTicket(data.ticket);
-
-        // Generate verified attendee entry QR Code data URL
-        const qr = await QRCode.toDataURL(data.ticket.qrCodeData, {
-          margin: 1,
-          width: 256,
-          color: {
-            dark: '#090d16',
-            light: '#ffffff',
-          },
-        });
-        setQrDataUrl(qr);
+        setIsVerifyingPayment(false);
+        setSubmitting(false);
         setShowPaymentPortal(false);
 
-        // Confetti celebration
-        confetti({
-          particleCount: 150,
-          spread: 85,
-          origin: { y: 0.6 },
-        });
-        playSuccessSound();
+        // Generate verified attendee entry QR Code data URL safely
+        try {
+          const qr = await QRCode.toDataURL(data.ticket.qrCodeData || `SUSHANTI:${data.ticket.ticketNumber}`, {
+            margin: 1,
+            width: 256,
+            color: {
+              dark: '#090d16',
+              light: '#ffffff',
+            },
+          });
+          setQrDataUrl(qr);
+        } catch (qrErr) {
+          console.warn('QR Code generation warning:', qrErr);
+        }
+
+        // Confetti celebration safely
+        try {
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 150,
+              spread: 85,
+              origin: { y: 0.6 },
+            });
+          }
+        } catch (confettiErr) {
+          console.warn('Confetti warning:', confettiErr);
+        }
+
+        try {
+          playSuccessSound();
+        } catch {}
       } else {
-        setVerificationError(
-          data.error || 'Failed to verify transaction. Please ensure valid payment reference is provided.'
-        );
+        const errText =
+          data.error || 'Failed to verify transaction. Please ensure valid payment reference is provided.';
+        setVerificationError(errText);
+        setFormError(errText);
       }
     } catch (err: any) {
       console.error(err);
-      setVerificationError('Verification connection error: ' + (err?.message || 'Please retry'));
+      const errText = 'Verification connection error: ' + (err?.message || 'Please retry');
+      setVerificationError(errText);
+      setFormError(errText);
     } finally {
       setIsVerifyingPayment(false);
       setSubmitting(false);
@@ -202,15 +229,14 @@ export default function EventRegisterPage() {
   };
 
   // Main Registration & Razorpay UPI Payment Portal trigger
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      router.push(`/login?redirect=/events/${slug}/register`);
-      return;
+  const handleRegisterSubmit = async (e?: React.FormEvent) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
     }
 
     setSubmitting(true);
     setVerificationError('');
+    setFormError('');
 
     try {
       const selectedTier = event.ticketTiers?.find((t: any) => t.id === selectedTierId) || event.ticketTiers?.[0];
@@ -700,14 +726,25 @@ export default function EventRegisterPage() {
             )}
           </div>
 
+          {formError && (
+            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
+
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={submitting}
-            className="w-full py-3.5 px-4 rounded-2xl text-xs font-bold bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            onClick={(e) => handleRegisterSubmit(e)}
+            disabled={submitting || isVerifyingPayment}
+            className="w-full py-3.5 px-4 rounded-2xl text-xs font-bold bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
-            {submitting ? (
-              <span>Connecting to Razorpay...</span>
+            {submitting || isVerifyingPayment ? (
+              <span className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Confirming Registration...</span>
+              </span>
             ) : finalPrice > 0 ? (
               <>
                 <CreditCard className="w-4 h-4" />

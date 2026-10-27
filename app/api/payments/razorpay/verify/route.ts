@@ -34,6 +34,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Event ID is required' }, { status: 400 });
     }
 
+    // Resolve event by ID or slug
+    const targetEvent = await prisma.event.findFirst({
+      where: { OR: [{ id: eventId }, { slug: eventId }] },
+    });
+    const resolvedEventId = targetEvent ? targetEvent.id : eventId;
+
     // 1. Strict Payment Gate: Verify payment for paid events
     const paymentRef = (razorpayPaymentId || utrNumber || upiRef || '').toString().trim();
 
@@ -135,20 +141,33 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Generate Ticket & QR Data
-    const ticketNumber = generateTicketNumber();
-    const qrData = `SUSHANTI:${ticketNumber}:${eventId}:${activeUser.id}:${Date.now()}`;
+    // 4. Validate Tier ID if provided
+    let validTierId: string | null = null;
+    if (tierId) {
+      const existingTier = await prisma.ticketTier
+        .findFirst({
+          where: { id: tierId },
+        })
+        .catch(() => null);
+      if (existingTier) {
+        validTierId = existingTier.id;
+      }
+    }
 
-    // 5. Create or Update Registration Record (ONLY AFTER PAYMENT IS VERIFIED)
+    // 5. Generate Ticket & QR Data
+    const ticketNumber = generateTicketNumber();
+    const qrData = `SUSHANTI:${ticketNumber}:${resolvedEventId}:${activeUser.id}:${Date.now()}`;
+
+    // 6. Create or Update Registration Record (ONLY AFTER PAYMENT IS VERIFIED)
     const registration = await prisma.registration.upsert({
       where: {
         eventId_userId: {
-          eventId,
+          eventId: resolvedEventId,
           userId: activeUser.id,
         },
       },
       update: {
-        ticketTierId: tierId || null,
+        ticketTierId: validTierId,
         teamId: teamId || null,
         status: 'CONFIRMED',
         paymentStatus: isFree || Number(amountPaid) === 0 ? 'FREE' : 'COMPLETED',
@@ -161,9 +180,9 @@ export async function POST(req: NextRequest) {
       },
       create: {
         ticketNumber,
-        eventId,
+        eventId: resolvedEventId,
         userId: activeUser.id,
-        ticketTierId: tierId || null,
+        ticketTierId: validTierId,
         teamId: teamId || null,
         status: 'CONFIRMED',
         paymentStatus: isFree || Number(amountPaid) === 0 ? 'FREE' : 'COMPLETED',
@@ -182,11 +201,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 6. Decrement available ticket capacity if tier exists
-    if (tierId) {
+    // 7. Decrement available ticket capacity if tier exists
+    if (validTierId) {
       await prisma.ticketTier
         .update({
-          where: { id: tierId },
+          where: { id: validTierId },
           data: { available: { decrement: 1 } },
         })
         .catch(() => {});
