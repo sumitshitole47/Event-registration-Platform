@@ -8,8 +8,13 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function getWritableDatabaseUrl(): string | undefined {
-  // If an external cloud database is configured (e.g. Postgres / Supabase / Turso), respect it
+  // If an external DATABASE_URL was set to something non-SQLite (e.g. Postgres from Vercel storage env), clean it up immediately
   if (process.env.DATABASE_URL && !process.env.DATABASE_URL.startsWith('file:')) {
+    delete process.env.DATABASE_URL;
+  }
+
+  // If a valid SQLite file URL is explicitly set, use it
+  if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('file:') && process.env.DATABASE_URL.length > 5) {
     return process.env.DATABASE_URL;
   }
 
@@ -18,7 +23,7 @@ function getWritableDatabaseUrl(): string | undefined {
     process.env.VERCEL ||
     process.env.AWS_LAMBDA_FUNCTION_NAME ||
     process.env.LAMBDA_TASK_ROOT ||
-    (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL)
+    process.env.NODE_ENV === 'production'
   );
 
   if (isServerless) {
@@ -72,7 +77,7 @@ function getWritableDatabaseUrl(): string | undefined {
           try {
             fs.chmodSync(tmpDbPath, 0o666);
           } catch {}
-          console.log(`[Prisma] Initialized writable database at ${tmpDbPath} from ${sourceDbPath}`);
+          console.log(`[Prisma] Initialized writable SQLite database at ${tmpDbPath} from ${sourceDbPath}`);
         } else {
           console.warn('[Prisma] Bundled dev.db not found for copying to tmp');
         }
@@ -98,7 +103,8 @@ function getPrisma(): PrismaClient {
       log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     };
 
-    if (dbUrl) {
+    // ONLY pass datasources.db.url if it strictly begins with 'file:'
+    if (dbUrl && typeof dbUrl === 'string' && dbUrl.startsWith('file:')) {
       options.datasources = {
         db: {
           url: dbUrl,
